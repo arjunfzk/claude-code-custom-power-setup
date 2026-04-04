@@ -207,44 +207,58 @@ for event, src_blocks in src_hooks.items():
     if not isinstance(src_blocks, list):
         continue
     if event not in dst_hooks:
-        # New event — add all blocks
-        dst_hooks[event] = src_blocks
-        for block in src_blocks:
-            added += len(block.get("hooks", []))
+        # New event — add all blocks, skipping any non-dict entries
+        valid_blocks = [b for b in src_blocks if isinstance(b, dict)]
+        dst_hooks[event] = valid_blocks
+        for block in valid_blocks:
+            added += len([h for h in block.get("hooks", []) if isinstance(h, dict)])
     else:
         dst_blocks = dst_hooks[event]
         if not isinstance(dst_blocks, list):
-            continue
-        # Build dedup set from existing destination commands
-        existing_cmds = {
-            h.get("command", "")
+            # Corrupt destination event — warn and reset rather than silently skip
+            print(f"  WARNING: hooks[{event}] in destination is not a list — resetting")
+            dst_blocks = []
+            dst_hooks[event] = dst_blocks
+        # Dedup identity is (matcher, command) — same command under different
+        # matchers are intentionally distinct and must both be preserved
+        existing = {
+            (block.get("matcher", ""), h.get("command", ""))
             for block in dst_blocks
+            if isinstance(block, dict)
             for h in block.get("hooks", [])
+            if isinstance(h, dict)
         }
         for src_block in src_blocks:
-            src_entries = src_block.get("hooks", [])
-            # Only append entries that are not already present; skip the whole
-            # block if ALL its commands already exist
+            if not isinstance(src_block, dict):
+                continue
+            matcher = src_block.get("matcher", "")
+            src_entries = [h for h in src_block.get("hooks", []) if isinstance(h, dict)]
             new_entries = [
                 h for h in src_entries
-                if h.get("command", "") not in existing_cmds
+                if (matcher, h.get("command", "")) not in existing
             ]
             if new_entries:
                 new_block = dict(src_block)
                 new_block["hooks"] = new_entries
                 dst_blocks.append(new_block)
-                # Update dedup set so later blocks in same event don't re-add
+                # Update identity set so later blocks in same event don't re-add
                 for h in new_entries:
-                    existing_cmds.add(h.get("command", ""))
+                    existing.add((matcher, h.get("command", "")))
                 added += len(new_entries)
 
 print(f"  {added} new hook entries merged")
 if not dry_run:
-    with open(dst_file, "w") as f:
-        json.dump(dst, f, indent=2)
-    print(f"  Saved to {dst_file}")
+    if added > 0:
+        with open(dst_file, "w") as f:
+            json.dump(dst, f, indent=2)
+        print(f"  Saved to {dst_file}")
+    else:
+        print("  No changes needed — settings.json unchanged")
 else:
-    print("  [dry-run] would write merged settings")
+    if added > 0:
+        print("  [dry-run] would write merged settings")
+    else:
+        print("  No changes needed — settings.json would be unchanged")
 PYEOF
 )
 
