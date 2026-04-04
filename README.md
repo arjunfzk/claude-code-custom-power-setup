@@ -145,75 +145,153 @@ If they show "failed", the package names are the common culprit. Verify `.mcp.js
 
 ---
 
-## Slash Commands
+## Skills (Slash Commands)
 
-Run any of these inside a Claude Code session.
+### What skills are
 
-### Development Workflow
+A skill is a markdown file that gives Claude a reusable, named procedure. When you type `/review`, Claude loads `.claude/skills/review/SKILL.md` and follows the instructions exactly — tools to call, steps to take, output format, gates to check.
 
-| Command | What it does |
-|---------|-------------|
-| `/new-project` | Scaffold a new LLM application with full structure, Docker, logging, tests |
-| `/brainstorm` | Multi-round brainstorming with web research and prior-art lookup |
-| `/search-first` | Search codebase for existing patterns before writing new code |
-| `/update-context` | Update `docs/context.md` and `docs/architecture.md` with current state |
+**The problem they solve:** Without skills, you'd repeat the same long prompt every time ("check for missing LLM logging, check for unclosed async clients, check for..."). With skills, you type two words and get a consistent, reproducible result.
 
-### Code Review & Quality
+**Where they live:**
 
-| Command | What it does |
-|---------|-------------|
-| `/review` | LLM-engineering-focused code review: logging, resources, security, types |
-| `/full-review` | 9-agent parallel review: tests, security, performance, quality, dependencies |
-| `/second-opinion` | Sends your diff to Codex CLI for an independent cross-model review |
-| `/deploy-check` | Pre-deployment checklist: tests, lint, Docker build, health check, zombies |
+```
+~/.claude/skills/          ← global (available in every project after ./install.sh)
+your-project/.claude/skills/   ← project-local (only in this repo)
+```
 
-### LLM Engineering
+**How Claude invokes them:** When you type `/review`, Claude searches the skills directories for a folder named `review`, loads `SKILL.md`, and executes it as if you'd pasted the full contents into the chat. Some skills auto-invoke — they specify in their frontmatter that Claude should invoke them proactively under certain conditions (e.g. the `brainstorm` skill tells Claude to invoke it before any creative work).
 
-| Command | What it does |
-|---------|-------------|
-| `/debug-llm` | Analyze `logs/llm/` for failures, slow calls, cost spikes, quality issues |
-| `/cost-aware-pipeline` | Audit or design an LLM pipeline for cost efficiency |
-| `/design-agent` | Design an AI agent architecture with state graph and guardrails |
+**How to add your own:**
 
-### Experiments
+```bash
+mkdir -p .claude/skills/my-command
+cat > .claude/skills/my-command/SKILL.md << 'EOF'
+---
+name: my-command
+description: What this command does (shown in /help)
+---
 
-| Command | What it does |
-|---------|-------------|
-| `/new-experiment` | Create isolated experiment: git worktree + own `uv` env + own logs |
-| `/compare-experiments` | Side-by-side comparison of experiment results and metrics |
-| `/cleanup-experiments` | List all worktree experiments with age/disk usage, offer to remove stale ones |
-| `/freeze [path]` | Lock Claude to only edit files under a specific directory |
-| `/unfreeze` | Remove the freeze restriction |
+# Steps
+1. Do this
+2. Then this
+3. Output a table
+EOF
+```
 
-### Research & Planning
+It's now available as `/my-command` in any Claude Code session in that project.
 
-| Command | What it does |
-|---------|-------------|
-| `/deep-research` | Multi-round research with thinking loop — searches until comprehensive |
-| `/self-learn` | Extract reusable knowledge from current session into memory |
-| `/autoloop [interval] [command]` | Run a command on a recurring interval (e.g. `/autoloop 5m /review`) |
-| `/offload` | Delegate a task to a background subagent while you continue working |
+### The 20 included skills
+
+#### Development Workflow
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/new-project` | Starting a new LLM app from scratch takes hours — directory layout, Docker, logging config, pyproject.toml, test structure. This scaffolds the entire thing with one command. |
+| `/brainstorm` | Claude tends to jump to the first solution. This forces multi-round research with web lookups and prior-art checks before committing to an approach. |
+| `/search-first` | Claude often writes new code for something that already exists in the codebase. This searches first, surfacing reusable patterns before writing anything. |
+| `/update-context` | `docs/context.md` and `docs/architecture.md` go stale after significant changes. This reads the current codebase and rewrites both docs in one shot. |
+
+#### Code Review & Quality
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/review` | Generic code review misses LLM-specific issues (missing token counting, no cost tracking, inline prompts, unclosed async clients). This review is tuned specifically for LLM engineering. |
+| `/full-review` | A single reviewer has blind spots. This spawns 9 parallel specialist subagents (tests, security, performance, quality, dependencies, simplicity, docs, logging, architecture) and aggregates their findings. |
+| `/second-opinion` | Claude reviewing its own code has confirmation bias. This sends your diff to Codex CLI (a completely different model) for an independent review. When two models flag the same issue, confidence is high. |
+| `/deploy-check` | Pre-deploy checklists get skipped under pressure. This automates the entire checklist: tests, lint, Docker build, health check endpoint, zombie process scan, memory usage. |
+
+#### LLM Engineering
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/debug-llm` | LLM bugs are subtle — high latency, silent cost spikes, quality regressions. This parses `logs/llm/*.json` (every call is logged) and surfaces failures, slow calls, expensive calls, and quality patterns. |
+| `/cost-aware-pipeline` | LLM pipelines get expensive fast. This audits your chain architecture for unnecessary calls, wrong model choices, missing caching, and token waste. |
+| `/design-agent` | Building an agent without an explicit state graph leads to spaghetti orchestration. This designs the full architecture first: state graph, pattern choice, guardrails, Mermaid diagram. |
+
+#### Experiments
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/new-experiment` | Testing a risky change in your main working tree means if it breaks, your whole env breaks. This creates a fully isolated git worktree with its own `uv` environment and log directories. |
+| `/compare-experiments` | After running multiple experiments you have results scattered across branches. This pulls metrics and outputs side-by-side into a comparison table. |
+| `/cleanup-experiments` | Stale worktrees accumulate disk usage silently. This lists all experiment branches with age and size, and offers to remove the ones you're done with. |
+| `/freeze [path]` | When you only want Claude to touch one subdirectory (e.g. `src/services/`) this blocks any Write/Edit outside that path for the session. |
+| `/unfreeze` | Removes the freeze set by `/freeze`. |
+
+#### Research & Planning
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/deep-research` | Web searches return shallow results. This runs a thinking loop — searches, evaluates what's missing, searches again — until the research is comprehensive. |
+| `/self-learn` | Debugging breakthroughs and workarounds discovered in a session get lost. This extracts them into persistent memory so they're available in future sessions. |
+| `/autoloop [interval] [command]` | Polling a deploy or watching test results requires you to keep typing. This runs any command on a recurring interval (e.g. `/autoloop 5m /deploy-check`). |
+| `/offload` | Long background tasks (scraping, batch processing, analysis) block the conversation. This delegates to a subagent and lets you continue working while it runs. |
 
 ---
 
 ## Subagents
 
-These specialized AI agents are invoked automatically by Claude when needed, or you can reference them explicitly.
+### What subagents are
 
-| Agent | Specialty |
-|-------|-----------|
-| `llm-architect` | Model selection, serving infrastructure, caching, multi-model routing |
-| `architect` | LangGraph state graphs, agent patterns, guardrails, Mermaid diagrams |
-| `code-reviewer` | Python LLM code: logging, resources, security, types, docstrings |
-| `security-reviewer` | Prompt injection, auth bypass, secrets in code, API key exposure |
-| `performance-reviewer` | N+1 queries, blocking ops in async, memory leaks, expensive hot paths |
-| `llm-reviewer` | Review LLM call logs for hallucination, cost, latency, prompt quality |
-| `rag-debugger` | RAG retrieval quality: chunk relevance, scores, embedding issues |
-| `test-writer` | Write pytest tests: mocks all API calls, uses recorded fixtures |
-| `docker-deployer` | Build Docker images, validate compose files, run health checks |
-| `prompt-optimizer` | Analyze prompt templates for token efficiency, clarity, effectiveness |
-| `agent-evaluator` | Test and evaluate agentic AI behavior: trajectory, guardrails, loops |
-| `log-cleaner` | Kill zombie processes, clean old logs, find resource leaks |
+A subagent is a separate Claude instance with a specific identity, focused context, and set of tools. When Claude dispatches a subagent, it spawns a fresh model call with only the information relevant to that specialization — no noise from the main conversation.
+
+**The problem they solve:** Claude in a general conversation tries to be good at everything, which means it's mediocre at specialized tasks. A security reviewer who only reviews security catches things a generalist misses. A RAG debugger who has seen hundreds of retrieval failures has better pattern recognition than a general assistant asked to "debug my RAG pipeline."
+
+**Skills vs Subagents:**
+
+| Skills (`/command`) | Subagents (`agent-name`) |
+|---------------------|--------------------------|
+| You invoke explicitly | Claude invokes automatically or on request |
+| Stay in the current conversation context | Run in isolated context — separate model call |
+| For procedures you want to follow step-by-step | For specialized work that benefits from focused expertise |
+| `/review` — you trigger it when you want a review | `code-reviewer` — Claude dispatches it when doing a `/full-review` |
+
+**How to invoke them explicitly:**
+> "Use the security-reviewer to audit my authentication middleware"
+> "Have the rag-debugger analyze why my similarity scores are all near 0.5"
+
+**Where they live:**
+
+```
+~/.claude/agents/              ← global (available in every project after ./install.sh)
+your-project/.claude/agents/   ← project-local (only in this repo)
+```
+
+**How to add your own:**
+
+Create a markdown file in `.claude/agents/`:
+
+```bash
+cat > .claude/agents/my-specialist.md << 'EOF'
+---
+name: my-specialist
+description: When to invoke this agent (Claude reads this to decide)
+tools: Read, Bash, Grep
+---
+
+You are an expert in X. When called, always...
+EOF
+```
+
+The `description` field is critical — Claude uses it to decide when to automatically dispatch this agent.
+
+### The 12 included agents
+
+| Agent | What it is | Problem it solves |
+|-------|-----------|------------------|
+| `llm-architect` | Expert in model selection, serving infrastructure, caching, multi-model routing | Choosing the wrong model tier or serving approach is expensive to fix later. This agent evaluates your requirements and recommends the right architecture before you build. |
+| `architect` | LangGraph expert — state graphs, agent patterns, guardrails, Mermaid diagrams | LangGraph has specific patterns for human-in-the-loop, interrupts, and checkpointing. This agent knows them and designs the graph correctly from the start. |
+| `code-reviewer` | Python LLM code reviewer — logging, resource cleanup, security, types, docstrings | Catches LLM-specific issues: missing `logs/llm/` writes, unclosed async clients, temperature not set, no token counting, `Any` types, missing docstrings. |
+| `security-reviewer` | Focused on prompt injection, auth bypass, secrets in code, API key exposure | Security issues in LLM apps are different from traditional apps — prompt injection, context leakage, jailbreaks. A generalist reviewer often misses them. |
+| `performance-reviewer` | N+1 queries, blocking ops in async, memory leaks, expensive hot paths | async code that accidentally blocks the event loop is hard to spot in review. This agent knows the patterns: `time.sleep` in async, non-async DB calls, missing `await`. |
+| `llm-reviewer` | Reads `logs/llm/*.json` and audits for quality, cost, latency, hallucination patterns | You can't improve what you don't measure. This agent reads the actual call logs and tells you which prompts are expensive, which have high retry rates, which responses look like hallucinations. |
+| `rag-debugger` | RAG retrieval specialist — chunk relevance, similarity scores, embedding issues | Bad RAG retrieval (wrong chunk size, wrong embedding model, poor similarity threshold) is hard to diagnose from symptoms alone. This agent reads the `logs/rag/` output and traces the root cause. |
+| `test-writer` | Writes pytest tests that mock all LLM API calls using recorded fixtures | LLM tests that call real APIs are slow, expensive, and flaky. This agent writes tests that replay recorded responses from `tests/fixtures/llm_responses/`. |
+| `docker-deployer` | Docker image builder, compose validator, health checker, resource auditor | Docker issues that appear fine locally fail in production due to missing dependencies, wrong users, no health checks, or memory limits. This agent validates before you ship. |
+| `prompt-optimizer` | Analyzes prompt templates for token efficiency, clarity, and LLM effectiveness | Prompts accumulate cruft. This agent reads your `prompts/` directory and finds: redundant instructions, ambiguous phrasing, token waste, missing output format specs. |
+| `agent-evaluator` | Tests agentic AI behavior — trajectory analysis, guardrail verification, loop termination | Agents that work in testing can fail in production with subtle issues: infinite loops, guardrail bypass, incorrect tool call sequences. This agent stress-tests the behavior. |
+| `log-cleaner` | Kills zombie processes, cleans old logs, reports memory/disk usage, finds resource leaks | Long-running LLM sessions accumulate zombie processes (orphaned uvicorn, celery workers) and large log files. This agent cleans house without touching your code. |
 
 ---
 
@@ -243,25 +321,118 @@ Structured multi-step reasoning. Breaks complex problems into sequential steps w
 
 ## Hook System
 
-Hooks run automatically — you don't need to think about them.
+### What hooks are
 
-### What runs automatically
+Hooks are shell commands that Claude Code runs automatically at specific points in its lifecycle. They are defined in `settings.json` and execute without you doing anything — Claude writes a file, the hook fires, done.
 
-| Trigger | Hook | Effect |
-|---------|------|--------|
-| Every Python file save | PostToolUse | `ruff check --fix` + `ruff format` |
-| Python file save in `src/` | PostToolUse | Runs matching test in `tests/` (timeout: 30s) |
-| `pyproject.toml` save | PostToolUse | `uv sync` |
-| Any Write/Edit on `main` branch | PreToolUse | **Blocks** — forces feature branch |
-| Any `pip install` command | PreToolUse | **Blocks** — redirects to `uv add` |
-| DELETE/UPDATE SQL without WHERE | PreToolUse | **Blocks** — requires user confirmation |
-| Writing to `migrations/` | PreToolUse | **Blocks** — must use `alembic revision` |
-| File content contains hardcoded secrets | PreToolUse | **Blocks** — detects API keys, passwords |
-| `git commit` with migrations staged | PreToolUse | Runs upgrade → downgrade → upgrade test |
-| Session start | SessionStart | Warns if `docs/context.md` > 3 days old |
-| Context compaction | PreCompact/PostCompact | Saves/restores branch + recent commits + context |
-| Claude finishes responding | Stop | macOS notification with sound |
-| Session end | SessionEnd | Kills dev servers (uvicorn, celery, streamlit) |
+**The problem they solve:** Claude is a language model. It will try its best to follow your CLAUDE.md rules, but under pressure it can forget to run `ruff`, miss that you're on `main`, or write a migration file directly. Hooks enforce rules at the tool level — before or after the action — so compliance isn't optional and doesn't depend on Claude remembering.
+
+**The two hook types:**
+
+- **PreToolUse** — runs before Claude uses a tool. Can return exit code 2 to **block** the action entirely and show Claude an error message.
+- **PostToolUse** — runs after Claude uses a tool. Used for side effects like formatting or running tests.
+
+**Other lifecycle events:** `SessionStart` (when a session opens), `SessionEnd` (when it closes), `Stop` (when Claude finishes a response), `PreCompact` / `PostCompact` (around context compaction).
+
+**Hook anatomy in `settings.json`:**
+
+```json
+"PostToolUse": [
+  {
+    "matcher": "Write|Edit",     ← which tool(s) trigger this hook
+    "hooks": [
+      {
+        "type": "command",
+        "command": "..."         ← shell command that receives tool input as JSON on stdin
+      }
+    ]
+  }
+]
+```
+
+The hook receives the tool call's input as JSON on `stdin`. For a `Write` call, that's the file path and content. For a `Bash` call, that's the command string. Your script reads this JSON, decides what to do, and exits 0 (allow), 2 (block), or any other code (allow with warning).
+
+**Where hooks live:** In `settings.json` under the `hooks` key. Global hooks go in `~/.claude/settings.json` and apply everywhere. Project hooks go in `.claude/settings.json` and apply only in that repo. The installer merges the project hooks into your global file non-destructively.
+
+### The 13 hooks included and what each one prevents
+
+#### Auto-format on every Python save (PostToolUse → Write/Edit)
+
+**What it does:** Runs `ruff check --fix` and `ruff format` after Claude writes any `.py` file.
+
+**Problem it solves:** Claude sometimes produces code that's syntactically valid but not formatted — inconsistent quotes, unused imports, wrong line spacing. Without this hook you'd need to remember to format manually, and a code review would have style noise mixed with real issues. With this hook, every file Claude touches is always formatted.
+
+#### Auto-test on `src/` save (PostToolUse → Write/Edit)
+
+**What it does:** When Claude writes a file in `src/`, it finds the matching test file in `tests/` and runs it (30-second timeout).
+
+**Problem it solves:** Bugs introduced by Claude are often caught by existing tests — but only if you remember to run them. This hook runs the relevant tests immediately after each edit. If the test fails, Claude sees the output in the same turn and can fix the code before moving on.
+
+#### Auto-sync on `pyproject.toml` save (PostToolUse → Write/Edit)
+
+**What it does:** Runs `uv sync` after Claude modifies `pyproject.toml`.
+
+**Problem it solves:** Claude might add a dependency to `pyproject.toml` but then try to import it before it's installed. This ensures the environment is always in sync with the manifest — imports work immediately after the file is saved.
+
+#### Block writes on `main` branch (PreToolUse → Write/Edit)
+
+**What it does:** Checks the current branch before any file write. If the branch is `main`, it blocks the write and tells Claude to create a feature branch.
+
+**Problem it solves:** It's easy to be in the middle of a session and accidentally be on `main`. One file write and your main branch has unreviewed changes. This hook makes it physically impossible — the tool call is rejected before the file is touched.
+
+#### Block `pip install` (PreToolUse → Bash)
+
+**What it does:** Intercepts any `bash` command that starts with `pip install` and blocks it.
+
+**Problem it solves:** `pip install` bypasses `uv`'s lock file, installs into the wrong environment, and breaks reproducibility. Claude knows to use `uv add` but sometimes falls back to `pip` from training patterns. This hook catches it every time.
+
+#### Block dangerous SQL (PreToolUse → Write/Edit)
+
+**What it does:** Scans file content before writing for `DELETE FROM`, `UPDATE ... SET`, `TRUNCATE`, `DROP TABLE`, `DROP DATABASE`, `.delete()`, `.truncate()`. Blocks and requires confirmation.
+
+**Problem it solves:** A single destructive SQL statement in the wrong context can wipe a database. This hook fires before the file is even written — you have to explicitly approve before Claude can save code containing destructive operations.
+
+#### Block direct migration file edits (PreToolUse → Write/Edit)
+
+**What it does:** Blocks any write to a path containing `/migrations/` or `/alembic/versions/`.
+
+**Problem it solves:** Editing existing migration files is one of the most dangerous things you can do with a database — it silently diverges your migration history from what's deployed. New migrations must be generated by Alembic. This hook makes direct editing impossible.
+
+#### Block hardcoded secrets on commit (PreToolUse → Bash)
+
+**What it does:** When `git commit` runs, scans all staged Python files for patterns matching API keys, passwords, Bearer tokens (`sk-...`, `api_key = "..."`, `OPENAI_API_KEY = "..."`).
+
+**Problem it solves:** Secrets committed to git are a security incident. Even if you delete them in the next commit, they're in history. This hook catches them before `git commit` completes — the commit is blocked until the secret is replaced with an env var reference.
+
+#### Migration reversibility test on commit (PreToolUse → Bash)
+
+**What it does:** When `git commit` runs with a migration file staged, it runs: `alembic upgrade head` → `alembic downgrade -1` → `alembic upgrade head`.
+
+**Problem it solves:** Irreversible migrations are a production disaster. If you ever need to roll back a deploy, a migration that can't downgrade leaves your database in an inconsistent state. This hook verifies the full up/down/up cycle before the migration is committed.
+
+#### Stale docs warning at session start (SessionStart)
+
+**What it does:** When a Claude Code session opens, checks the modification time of `docs/context.md` and `docs/architecture.md`. If either is older than 3 days, shows a warning.
+
+**Problem it solves:** Claude relies on `docs/context.md` for current project state. If you forgot to run `/update-context` after significant changes, Claude will be working from stale information. This surfaces the problem at the start of each session before any code is written.
+
+#### Context preservation across compaction (PreCompact / PostCompact)
+
+**What it does:** Before context compaction, saves current branch name, last 5 commits, modified files, and a snippet of `docs/context.md` to `.claude/pre-compact-state.json`. After compaction, reads that file and injects the context back into Claude's conversation.
+
+**Problem it solves:** When Claude Code compacts the conversation to free context space, Claude loses everything it knew about the current state — what branch you're on, what you were just working on, what changed. This hook saves that critical state before compaction and restores it immediately after, so the session continues smoothly.
+
+#### Notification when Claude finishes (Stop)
+
+**What it does:** When Claude finishes generating a response, fires a macOS notification with the "Glass" sound. Falls back to `notify-send` on Linux.
+
+**Problem it solves:** Long tasks (full reviews, experiment runs, research) can take minutes. Instead of polling the terminal, you can switch to another window and get notified when Claude is done.
+
+#### Kill dev servers on session end (SessionEnd)
+
+**What it does:** When the Claude Code session closes, sends `SIGTERM` to any `uvicorn`, `celery`, `streamlit`, or `gradio` processes that were started in the current project directory.
+
+**Problem it solves:** Dev servers started during a Claude session often keep running after the session ends, consuming ports and memory. This hook cleans them up automatically — no orphan processes, no "port already in use" error next time.
 
 ---
 
