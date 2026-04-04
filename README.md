@@ -49,9 +49,8 @@ This is not a starter scaffold — it's a **Claude Code configuration layer** th
 Installs skills, agents, hooks, and rules into `~/.claude/` so they work in **every project**, not just this one.
 
 ```bash
-# Replace YOUR_USERNAME with the actual GitHub username hosting this repo
-git clone https://github.com/YOUR_USERNAME/claude-code-power-setup.git
-cd claude-code-power-setup
+git clone https://github.com/arjunfzk/claude-code-custom-power-setup.git
+cd claude-code-custom-power-setup
 ./install.sh
 ```
 
@@ -80,13 +79,12 @@ After installing, **restart Claude Code**. Then run these once inside any Claude
 If you only want this config in one specific project:
 
 ```bash
-# Replace YOUR_USERNAME with the actual GitHub username hosting this repo
-git clone https://github.com/YOUR_USERNAME/claude-code-power-setup.git
+git clone https://github.com/arjunfzk/claude-code-custom-power-setup.git
 
-cp -r claude-code-power-setup/.claude      your-project/
-cp    claude-code-power-setup/.mcp.json    your-project/
-cp    claude-code-power-setup/.claudeignore your-project/
-cp    claude-code-power-setup/CLAUDE.md    your-project/
+cp -r claude-code-custom-power-setup/.claude      your-project/
+cp    claude-code-custom-power-setup/.mcp.json    your-project/
+cp    claude-code-custom-power-setup/.claudeignore your-project/
+cp    claude-code-custom-power-setup/CLAUDE.md    your-project/
 ```
 
 Or click **"Use this template"** at the top of this page to start a new repo from it.
@@ -116,7 +114,7 @@ The MCP config lives in `.mcp.json` — it's **project-level only** and must be 
 
 ```bash
 # For each project you want MCP in:
-cp /path/to/claude-code-power-setup/.mcp.json your-project/
+cp /path/to/claude-code-custom-power-setup/.mcp.json your-project/
 ```
 
 Then start a Claude Code session in that project. You should see both servers connect:
