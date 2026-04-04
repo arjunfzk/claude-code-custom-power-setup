@@ -1,0 +1,44 @@
+# Model weights & data (huge, binary)
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.bin
+*.parquet
+*.arrow
+*.h5
+*.pkl
+*.db
+data/
+
+# Runtime logs (read manually, not by Claude)
+logs/
+*.log
+wandb/
+mlruns/
+
+# Python noise
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+
+# Node (UI tools)
+node_modules/
+.next/
+package-lock.json
+
+# Docker volumes
+docker/volumes/
+*.tar.gz
+
+# Experiment artifacts
+experiments/*/logs/
+experiments/*/data/

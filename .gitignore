@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.env
+.env.*
+!.env.example
+*.egg-info/
+dist/
+build/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Logs — never commit
+logs/
+*.log
+
+# Model weights
+*.pt
+*.bin
+*.onnx
+*.safetensors
+
+# Docker volumes
+data/
+postgres_data/
+redis_data/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Keys / secrets
+*.pem
+*.key
+*.p12
+*.pfx
+credentials/
+secrets/
+
+# Claude internals (not config files — those are intentionally committed)
+.claude/pre-compact-state.json
