@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "description": "Live documentation for any library. Use for LangChain, FastAPI, Pydantic, any API that changes frequently."
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Structured multi-step reasoning. Use for complex architecture decisions, debugging multi-step issues, planning."
+    }
+  }
+}

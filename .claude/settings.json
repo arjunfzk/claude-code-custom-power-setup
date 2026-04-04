@@ -1,0 +1,289 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run *)",
+      "Bash(uv add *)",
+      "Bash(uv sync*)",
+      "Bash(docker compose *)",
+      "Bash(docker build *)",
+      "Bash(docker ps*)",
+      "Bash(docker logs *)",
+      "Bash(docker exec *)",
+      "Bash(curl http://localhost*)",
+      "Bash(curl http://127.0.0.1*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git status*)",
+      "Bash(git worktree *)",
+      "Bash(git stash *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(jq *)",
+      "Bash(grep *)",
+      "Bash(sort *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(touch *)",
+      "Bash(python3 *)",
+      "Bash(python3 -c *)",
+      "Bash(ps *)",
+      "Bash(ps aux*)",
+      "Bash(lsof *)",
+      "Bash(sleep *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(echo *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(command *)",
+      "Bash(pgrep *)",
+      "Bash(pkill *)",
+      "Bash(du *)",
+      "Bash(df *)",
+      "Bash(date *)",
+      "Bash(which *)",
+      "Bash(env *)",
+      "Read(*)",
+      "Write(src/**)",
+      "Write(tests/**)",
+      "Write(scripts/**)",
+      "Write(configs/**)",
+      "Write(prompts/**)",
+      "Write(ui/**)",
+      "Write(docker/**)",
+      "Write(docs/**)",
+      "Write(experiments/**)",
+      "Write(CLAUDE.md)",
+      "Write(.mcp.json)",
+      "Write(.claude/**)",
+      "Write(.claudeignore)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Edit(scripts/**)",
+      "Edit(prompts/**)",
+      "Edit(ui/**)",
+      "Edit(docker/**)",
+      "Edit(docs/**)",
+      "Edit(configs/**)",
+      "Edit(experiments/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(.mcp.json)",
+      "Edit(.claude/**)",
+      "Edit(.claudeignore)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(rm -r /)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(pip install*)",
+      "Bash(pip3 install*)",
+      "Bash(python -m pip*)",
+      "Bash(python3 -m pip*)",
+      "Bash(docker system prune*)",
+      "Bash(docker volume rm *)",
+      "Bash(kill -9 *)",
+      "Bash(killall *)",
+      "Bash(chmod 777*)",
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Write(.env*)",
+      "Write(**/.env*)",
+      "Edit(.env*)",
+      "Edit(**/.env*)",
+      "Write(**/migrations/**)",
+      "Edit(**/migrations/**)",
+      "Write(**/alembic/versions/**)",
+      "Edit(**/alembic/versions/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('file_path', data.get('path', ''))\n    if path.endswith('.py'):\n        import subprocess\n        subprocess.run(['uv', 'run', 'ruff', 'check', '--fix', '--quiet', path], capture_output=True)\n        subprocess.run(['uv', 'run', 'ruff', 'format', '--quiet', path], capture_output=True)\nexcept: pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, subprocess\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('file_path', data.get('path', ''))\n    if path.endswith('.py') and path.startswith('src/') and not path.startswith('src/logging'):\n        test_path = path.replace('src/', 'tests/test_', 1)\n        import os\n        if os.path.isfile(test_path):\n            result = subprocess.run(['uv', 'run', 'pytest', test_path, '-x', '-q', '--tb=short'], capture_output=True, text=True, timeout=30)\n            if result.stdout.strip():\n                # Only show last 10 lines to avoid context bloat\n                lines = result.stdout.strip().split('\\n')[-10:]\n                print(json.dumps({'message': '\\n'.join(lines)}))\nexcept: pass\n\"",
+            "timeout": 35000
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, subprocess\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('file_path', data.get('path', ''))\n    if path.endswith('pyproject.toml'):\n        result = subprocess.run(['uv', 'sync'], capture_output=True, text=True, timeout=60)\n        if result.stdout.strip():\n            lines = result.stdout.strip().split('\\n')[-5:]\n            print(json.dumps({'message': 'Auto uv sync: ' + '; '.join(lines)}))\nexcept: pass\n\"",
+            "timeout": 65000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c '[ \"$(git branch --show-current 2>/dev/null)\" != \"main\" ] || { echo \"{\\\"message\\\": \\\"BLOCKED: Cannot edit files on main branch. Create a feature branch: git checkout -b feat/description\\\"}\"; exit 2; }'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\n    cmd = data.get('command', '')\n    # Block pip\n    import re\n    if re.match(r'^(pip3?|python3? -m pip)\\s', cmd):\n        print(json.dumps({'message': 'BLOCKED: Use uv instead of pip. Add: uv add <pkg>. Install: uv sync.'}))\n        sys.exit(2)\n    # Block destructive\n    dangerous = ['rm ', 'DROP TABLE', 'DROP DATABASE', 'TRUNCATE',\n                 'git push --force', 'git push -f ', 'git reset --hard', 'git checkout .', 'git restore .',\n                 'kubectl delete', 'docker rm -f', ':(){ :|:& };:', '> /dev/sda']\n    for d in dangerous:\n        if d.lower() in cmd.lower():\n            print(json.dumps({'message': f'BLOCKED: Destructive command detected: {d}. Use a safer alternative or confirm with the user.'}))\n            sys.exit(2)\nexcept: pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\n    cmd = data.get('command', '')\n    if re.search(r'\\b(DELETE\\s+FROM|UPDATE\\s+\\w+\\s+SET)\\b', cmd, re.I):\n        match = re.search(r'(?:DELETE\\s+FROM|UPDATE)\\s+(\\w+)', cmd, re.I)\n        table = match.group(1) if match else 'unknown'\n        has_where = bool(re.search(r'\\bWHERE\\b', cmd, re.I))\n        msg = f'DB SAFETY: This will affect table \\\"{table}\\\"'\n        if not has_where:\n            msg += ' with NO WHERE clause (ALL rows!)'\n        msg += '. Please confirm with the user before proceeding.'\n        print(json.dumps({'message': msg}))\n        sys.exit(2)\n    orm_dangers = [\n        (r'\\.delete\\s*\\(', '.delete()'),\n        (r'\\.truncate\\s*\\(', '.truncate()'),\n        (r'\\bexecute\\s*\\(.*\\b(?:delete|update|truncate|drop)\\b', 'execute(delete/update/truncate/drop)'),\n        (r'\\b(?:remove_all|delete_many|drop_collection|delete_one|delete_all)\\s*\\(', 'bulk delete operation'),\n    ]\n    for pattern, name in orm_dangers:\n        if re.search(pattern, cmd, re.I):\n            print(json.dumps({'message': f'DB SAFETY: Command contains {name} — this could modify or destroy database data. Confirm with the user before proceeding.'}))\n            sys.exit(2)\nexcept: pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('file_path', data.get('path', ''))\n    if '/migrations/' in path or '/alembic/versions/' in path:\n        print(json.dumps({'message': 'BLOCKED: Cannot modify migration files. Create new: uv run alembic revision --autogenerate -m \\\"description\\\"'}))\n        sys.exit(2)\nexcept: pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('file_path', data.get('path', ''))\n    content = data.get('content', '') or data.get('new_string', '')\n    if not content or not path:\n        sys.exit(0)\n    if not path.endswith(('.py', '.sql', '.sh', '.bash', '.js', '.ts', '.tsx')):\n        sys.exit(0)\n    db_dangers = [\n        (r'\\bDELETE\\s+FROM\\b', 'DELETE FROM'),\n        (r'\\bUPDATE\\s+\\w+\\s+SET\\b', 'UPDATE...SET'),\n        (r'\\bTRUNCATE\\b', 'TRUNCATE'),\n        (r'\\bDROP\\s+TABLE\\b', 'DROP TABLE'),\n        (r'\\bDROP\\s+DATABASE\\b', 'DROP DATABASE'),\n        (r'\\.delete\\s*\\(', '.delete()'),\n        (r'\\.truncate\\s*\\(', '.truncate()'),\n        (r'\\bexecute\\b.*\\b(?:delete|update|truncate|drop)\\b', 'execute(delete/update/truncate/drop)'),\n    ]\n    for pattern, name in db_dangers:\n        if re.search(pattern, content, re.I):\n            print(json.dumps({'message': f'DB SAFETY: File {path} contains {name} operation. This could modify or destroy database data. Confirm with the user before writing this file.'}))\n            sys.exit(2)\nexcept:\n    pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, os, subprocess\ntry:\n    data = json.load(sys.stdin)\n    path = data.get('file_path', data.get('path', ''))\n    if not path:\n        sys.exit(0)\n    root = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True).stdout.strip()\n    freeze_file = os.path.join(root, '.claude', '.freeze-state') if root else ''\n    if not freeze_file or not os.path.isfile(freeze_file):\n        sys.exit(0)\n    with open(freeze_file) as f:\n        frozen_dir = f.read().strip()\n    abs_path = os.path.abspath(path)\n    if not abs_path.startswith(frozen_dir):\n        print(json.dumps({'message': f'BLOCKED: Edit outside frozen directory. Edits restricted to {frozen_dir}. Use /unfreeze to remove restriction.'}))\n        sys.exit(2)\nexcept:\n    pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, subprocess, re\ntry:\n    data = json.load(sys.stdin)\n    cmd = data.get('command', '')\n    if not re.match(r'^git\\s+commit', cmd):\n        sys.exit(0)\n    # SECRET SCANNER: check staged files for hardcoded secrets\n    staged = subprocess.run(['git', 'diff', '--cached', '--name-only'], capture_output=True, text=True)\n    py_files = [f for f in staged.stdout.strip().split('\\n') if f.endswith('.py') and f]\n    if not py_files:\n        sys.exit(0)\n    patterns = [\n        r'(sk-[a-zA-Z0-9]{20,})',\n        r'(api[_-]?key\\s*=\\s*[\\x27\\\"][^\\x27\\\"]{10,})',\n        r'(password\\s*=\\s*[\\x27\\\"][^\\x27\\\"]{5,})',\n        r'(OPENAI_API_KEY\\s*=\\s*[\\x27\\\"][^\\x27\\\"]+)',\n        r'(ANTHROPIC_API_KEY\\s*=\\s*[\\x27\\\"][^\\x27\\\"]+)',\n        r'(Bearer\\s+[a-zA-Z0-9_\\-\\.]{20,})',\n    ]\n    import re as regex_mod\n    for f in py_files:\n        try:\n            content = open(f).read()\n            for pat in patterns:\n                match = regex_mod.search(pat, content)\n                if match:\n                    print(json.dumps({'message': f'SECRET DETECTED in {f}: possible hardcoded credential. Use pydantic-settings + .env instead.'}))\n                    sys.exit(2)\n        except: pass\nexcept: pass\n\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, subprocess, re, os\ntry:\n    data = json.load(sys.stdin)\n    cmd = data.get('command', '')\n    if not re.match(r'^git\\s+commit', cmd):\n        sys.exit(0)\n    # MIGRATION REVERSIBILITY TEST: if migrations are staged, test up/down/up\n    staged = subprocess.run(['git', 'diff', '--cached', '--name-only'], capture_output=True, text=True)\n    has_migration = any('migration' in f or 'alembic/versions' in f for f in staged.stdout.strip().split('\\n') if f)\n    if not has_migration:\n        sys.exit(0)\n    if not os.path.isfile('alembic.ini'):\n        sys.exit(0)\n    # Test: upgrade → downgrade → upgrade\n    up1 = subprocess.run(['uv', 'run', 'alembic', 'upgrade', 'head'], capture_output=True, text=True, timeout=30)\n    if up1.returncode != 0:\n        print(json.dumps({'message': f'MIGRATION TEST FAILED (upgrade): {up1.stderr[:200]}'}))\n        sys.exit(2)\n    down = subprocess.run(['uv', 'run', 'alembic', 'downgrade', '-1'], capture_output=True, text=True, timeout=30)\n    if down.returncode != 0:\n        print(json.dumps({'message': f'MIGRATION TEST FAILED (downgrade): {down.stderr[:200]}. Your migration cannot be rolled back!'}))\n        sys.exit(2)\n    up2 = subprocess.run(['uv', 'run', 'alembic', 'upgrade', 'head'], capture_output=True, text=True, timeout=30)\n    if up2.returncode != 0:\n        print(json.dumps({'message': f'MIGRATION TEST FAILED (re-upgrade): {up2.stderr[:200]}'}))\n        sys.exit(2)\n    print(json.dumps({'message': 'Migration reversibility test: PASSED (upgrade → downgrade → upgrade)'}))\nexcept Exception as e:\n    # Don't block commit if test infra isn't set up yet\n    pass\n\"",
+            "timeout": 45000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude finished\" with title \"Claude Code\" sound name \"Glass\"' 2>/dev/null || notify-send 'Claude Code' 'Done' 2>/dev/null; exit 0"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport json, subprocess, os\ntry:\n    state = {}\n    # Save current branch\n    branch = subprocess.run(['git', 'branch', '--show-current'], capture_output=True, text=True)\n    state['branch'] = branch.stdout.strip()\n    # Save recent git activity\n    log = subprocess.run(['git', 'log', '--oneline', '-5'], capture_output=True, text=True)\n    state['recent_commits'] = log.stdout.strip()\n    # Save modified files\n    diff = subprocess.run(['git', 'diff', '--name-only'], capture_output=True, text=True)\n    state['modified_files'] = diff.stdout.strip()\n    # Save current task context if context.md exists\n    if os.path.isfile('docs/context.md'):\n        with open('docs/context.md') as f:\n            state['context_summary'] = f.read()[:500]\n    # Write state file for PostCompact to read\n    os.makedirs('.claude', exist_ok=True)\n    with open('.claude/pre-compact-state.json', 'w') as f:\n        json.dump(state, f)\n    print(json.dumps({'message': 'Pre-compact state saved.'}))\nexcept: pass\n\""
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport json, os\ntry:\n    state_file = '.claude/pre-compact-state.json'\n    if os.path.isfile(state_file):\n        with open(state_file) as f:\n            state = json.load(f)\n        msg = 'CONTEXT RESTORED after compaction:\\n'\n        msg += f'Branch: {state.get(\"branch\", \"unknown\")}\\n'\n        msg += f'Recent commits: {state.get(\"recent_commits\", \"none\")}\\n'\n        msg += f'Modified files: {state.get(\"modified_files\", \"none\")}\\n'\n        if state.get('context_summary'):\n            msg += f'Context: {state[\"context_summary\"][:200]}...\\n'\n        msg += 'RULES: uv not pip | Log LLM calls | Prompts in files | Docstrings required | Close async clients | No fire-and-forget | DB safety'\n        print(json.dumps({'message': msg}))\n        os.remove(state_file)\nexcept: pass\n\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport os, time, json\nwarnings = []\nfor doc in ['docs/context.md', 'docs/architecture.md']:\n    if os.path.isfile(doc):\n        age_days = (time.time() - os.path.getmtime(doc)) / 86400\n        if age_days > 3:\n            warnings.append(f'{doc} is {int(age_days)} days old')\nif warnings:\n    msg = 'STALE DOCS WARNING: ' + '; '.join(warnings) + '. Run /update-context to refresh.'\n    print(json.dumps({'message': msg}))\n\" 2>/dev/null; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"message\": \"POST-COMPACTION REMINDER: 1) uv not pip, 2) Log ALL LLM calls (logs/llm/), 3) Prompts in prompts/ not inline, 4) Module+function docstrings on every .py, 5) Close async clients in lifespan, 6) No fire-and-forget tasks, 7) NEVER delete/update DB without showing count and getting permission.\"}'"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport subprocess, os, signal\ncwd = os.getcwd()\nfor proc_name in ['uvicorn', 'celery', 'streamlit', 'gradio']:\n    try:\n        result = subprocess.run(['pgrep', '-af', proc_name], capture_output=True, text=True)\n        for line in result.stdout.strip().split('\\n'):\n            if not line:\n                continue\n            parts = line.split(None, 1)\n            pid = parts[0]\n            cmdline = parts[1] if len(parts) > 1 else ''\n            if cwd in cmdline:\n                os.kill(int(pid), signal.SIGTERM)\n    except: pass\n\" 2>/dev/null; exit 0"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && rm -f \"$ROOT/.claude/.freeze-state\" 2>/dev/null; exit 0'"
+          }
+        ]
+      }
+    ]
+  }
+}
