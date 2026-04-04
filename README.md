@@ -44,24 +44,54 @@ This is not a starter scaffold — it's a **Claude Code configuration layer** th
 
 ## Setup
 
-### 1. Copy the template into your project
+### Option A — Global install (recommended)
+
+Installs skills, agents, hooks, and rules into `~/.claude/` so they work in **every project**, not just this one.
 
 ```bash
-# Clone this repo
+git clone https://github.com/YOUR_USERNAME/claude-code-power-setup.git
+cd claude-code-power-setup
+./install.sh
+```
+
+What `install.sh` does:
+- Copies all 20 skills → `~/.claude/skills/` (available as `/command` in any project)
+- Copies all 12 agents → `~/.claude/agents/` (available as subagents in any project)
+- Copies all 9 context rules → `~/.claude/rules/`
+- Merges hooks into `~/.claude/settings.json` (non-destructive — backs up your existing file first)
+- Creates `~/.claude/CLAUDE.md` with a starter global rules template if you don't have one yet
+
+Dry-run first to see what would change:
+
+```bash
+./install.sh --dry-run
+```
+
+After installing, **restart Claude Code**. Then run these once inside any Claude Code session to install community plugins:
+
+```
+/install-github superpowers-ai/superpowers
+/install-github superpowers-ai/gsd
+```
+
+### Option B — Per-project copy
+
+If you only want this config in one specific project:
+
+```bash
 git clone https://github.com/YOUR_USERNAME/claude-code-power-setup.git
 
-# Copy the Claude config into your existing project
 cp -r claude-code-power-setup/.claude      your-project/
 cp    claude-code-power-setup/.mcp.json    your-project/
 cp    claude-code-power-setup/.claudeignore your-project/
 cp    claude-code-power-setup/CLAUDE.md    your-project/
 ```
 
-Or use this as a GitHub template repo (click "Use this template" at the top of the page).
+Or click **"Use this template"** at the top of this page to start a new repo from it.
 
-### 2. Customize CLAUDE.md
+### After either option: customize CLAUDE.md
 
-Open `CLAUDE.md` and replace the placeholders:
+Open `CLAUDE.md` (or `~/.claude/CLAUDE.md` for global) and replace the placeholders:
 
 - `[PROJECT_NAME]` → your project name
 - `[ChromaDB / Pinecone / Qdrant / pgvector]` → your vector DB choice
@@ -69,29 +99,7 @@ Open `CLAUDE.md` and replace the placeholders:
 
 Keep CLAUDE.md under 200 lines. It's loaded on every message — shorter = better adherence.
 
-### 3. Install plugins (global, one-time)
-
-Open a Claude Code session in any project and run:
-
-```
-/install-github superpowers-ai/superpowers
-/install-github superpowers-ai/gsd
-```
-
-These add the `superpowers:*` and `gsd:*` slash commands globally across all your projects. Restart Claude Code after installing.
-
-### 4. Configure global hooks (optional but recommended)
-
-The template's `.claude/settings.json` covers project-level permissions. For **global** hooks that apply to every project (secret scanning on commit, auto-format, DB safety, etc.), merge the hooks from `.claude/settings.json` into your `~/.claude/settings.json`.
-
-The easiest way:
-
-```bash
-# Open your global settings in Claude Code
-# Then say: "Merge the hooks from my project .claude/settings.json into my global settings.json"
-```
-
-### 5. Verify MCP servers
+### Verify MCP servers
 
 Start a Claude Code session. You should see both MCP servers connect:
 
