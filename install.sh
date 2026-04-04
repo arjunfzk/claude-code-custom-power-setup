@@ -11,8 +11,29 @@
 
 set -euo pipefail
 
+# Validate arguments — unknown flags silently proceeding is dangerous
+case "${1:-}" in
+  ""|"--dry-run") ;;
+  "--help"|"-h")
+    echo "Usage: ./install.sh [--dry-run]"
+    echo "  --dry-run  Show what would happen without making any changes"
+    exit 0
+    ;;
+  *)
+    echo "Error: unknown argument '${1}'. Use --dry-run or --help." >&2
+    exit 1
+    ;;
+esac
+
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
+
+# Verify python3 is available before starting — it's needed for hook merge
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Error: python3 is required but not found." >&2
+  echo "Install it with: brew install python@3.11" >&2
+  exit 1
+fi
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 GLOBAL_DIR="$HOME/.claude"
@@ -211,7 +232,9 @@ for event, src_blocks in src_hooks.items():
         valid_blocks = [b for b in src_blocks if isinstance(b, dict)]
         dst_hooks[event] = valid_blocks
         for block in valid_blocks:
-            added += len([h for h in block.get("hooks", []) if isinstance(h, dict)])
+            hook_list = block.get("hooks", [])
+            if isinstance(hook_list, list):
+                added += len([h for h in hook_list if isinstance(h, dict)])
     else:
         dst_blocks = dst_hooks[event]
         if not isinstance(dst_blocks, list):
@@ -220,22 +243,30 @@ for event, src_blocks in src_hooks.items():
             dst_blocks = []
             dst_hooks[event] = dst_blocks
         # Dedup identity is (matcher, command) — same command under different
-        # matchers are intentionally distinct and must both be preserved
+        # matchers are intentionally distinct and must both be preserved.
+        # Coerce to str to guard against unhashable non-string values.
+        def hook_id(block, h):
+            matcher = str(block.get("matcher", "")) if isinstance(block, dict) else ""
+            command = str(h.get("command", "")) if isinstance(h, dict) else ""
+            return (matcher, command)
+
         existing = {
-            (block.get("matcher", ""), h.get("command", ""))
+            hook_id(block, h)
             for block in dst_blocks
             if isinstance(block, dict)
-            for h in block.get("hooks", [])
+            for h in (block.get("hooks", []) if isinstance(block.get("hooks"), list) else [])
             if isinstance(h, dict)
         }
         for src_block in src_blocks:
             if not isinstance(src_block, dict):
                 continue
-            matcher = src_block.get("matcher", "")
-            src_entries = [h for h in src_block.get("hooks", []) if isinstance(h, dict)]
+            src_hook_list = src_block.get("hooks", [])
+            if not isinstance(src_hook_list, list):
+                continue
+            src_entries = [h for h in src_hook_list if isinstance(h, dict)]
             new_entries = [
                 h for h in src_entries
-                if (matcher, h.get("command", "")) not in existing
+                if hook_id(src_block, h) not in existing
             ]
             if new_entries:
                 new_block = dict(src_block)
@@ -243,7 +274,7 @@ for event, src_blocks in src_hooks.items():
                 dst_blocks.append(new_block)
                 # Update identity set so later blocks in same event don't re-add
                 for h in new_entries:
-                    existing.add((matcher, h.get("command", "")))
+                    existing.add(hook_id(src_block, h))
                 added += len(new_entries)
 
 print(f"  {added} new hook entries merged")
