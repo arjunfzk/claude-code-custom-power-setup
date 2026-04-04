@@ -55,9 +55,9 @@ cd claude-code-power-setup
 ```
 
 What `install.sh` does:
-- Copies all 20 skills → `~/.claude/skills/` (available as `/command` in any project)
-- Copies all 12 agents → `~/.claude/agents/` (available as subagents in any project)
-- Copies all 9 context rules → `~/.claude/rules/`
+- Copies all skills → `~/.claude/skills/` (available as `/command` in any project)
+- Copies all agents → `~/.claude/agents/` (available as subagents in any project)
+- Copies all context rules → `~/.claude/rules/`
 - Merges hooks into `~/.claude/settings.json` (non-destructive — backs up your existing file first)
 - Creates `~/.claude/CLAUDE.md` with a starter global rules template if you don't have one yet
 
