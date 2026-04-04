@@ -89,9 +89,18 @@ cp    claude-code-power-setup/CLAUDE.md    your-project/
 
 Or click **"Use this template"** at the top of this page to start a new repo from it.
 
-### After either option: customize CLAUDE.md
+### After Option A: customize your global CLAUDE.md
 
-Open `CLAUDE.md` (or `~/.claude/CLAUDE.md` for global) and replace the placeholders:
+The installer creates `~/.claude/CLAUDE.md` with starter rules if you don't have one yet. Edit it to match your personal preferences:
+
+```bash
+open ~/.claude/CLAUDE.md   # macOS
+# or: code ~/.claude/CLAUDE.md
+```
+
+### After Option B: customize the project CLAUDE.md
+
+Open `CLAUDE.md` in your project and replace the placeholders:
 
 - `[PROJECT_NAME]` → your project name
 - `[ChromaDB / Pinecone / Qdrant / pgvector]` → your vector DB choice
@@ -99,9 +108,16 @@ Open `CLAUDE.md` (or `~/.claude/CLAUDE.md` for global) and replace the placehold
 
 Keep CLAUDE.md under 200 lines. It's loaded on every message — shorter = better adherence.
 
-### Verify MCP servers
+### MCP servers (per-project, both options)
 
-Start a Claude Code session. You should see both MCP servers connect:
+The MCP config lives in `.mcp.json` — it's **project-level only** and must be copied into each project separately. The global install does not do this automatically.
+
+```bash
+# For each project you want MCP in:
+cp /path/to/claude-code-power-setup/.mcp.json your-project/
+```
+
+Then start a Claude Code session in that project. You should see both servers connect:
 
 ```
 ✓ context7
