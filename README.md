@@ -49,6 +49,7 @@ This is not a starter scaffold — it's a **Claude Code configuration layer** th
 Installs skills, agents, hooks, and rules into `~/.claude/` so they work in **every project**, not just this one.
 
 ```bash
+# Replace YOUR_USERNAME with the actual GitHub username hosting this repo
 git clone https://github.com/YOUR_USERNAME/claude-code-power-setup.git
 cd claude-code-power-setup
 ./install.sh
@@ -79,6 +80,7 @@ After installing, **restart Claude Code**. Then run these once inside any Claude
 If you only want this config in one specific project:
 
 ```bash
+# Replace YOUR_USERNAME with the actual GitHub username hosting this repo
 git clone https://github.com/YOUR_USERNAME/claude-code-power-setup.git
 
 cp -r claude-code-power-setup/.claude      your-project/
