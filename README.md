@@ -13,7 +13,7 @@ This is not a starter scaffold — it's a **Claude Code configuration layer** th
 | Project CLAUDE.md | `CLAUDE.md` | Project instructions for Claude — stack, commands, LLM rules |
 | Project settings | `.claude/settings.json` | Allow/deny rules + 7 hook event handlers |
 | MCP servers | `.mcp.json` | context7 (live docs) + sequential-thinking (structured reasoning) |
-| Slash commands | `.claude/skills/` | 20 custom `/commands` |
+| Slash commands | `.claude/skills/` | 21 custom `/commands` |
 | Subagents | `.claude/agents/` | 12 specialized AI subagents |
 | Context rules | `.claude/rules/` | Domain-specific rules loaded on demand |
 | Ignore list | `.claudeignore` | Tells Claude to skip logs, weights, caches |
@@ -181,7 +181,7 @@ EOF
 
 It's now available as `/my-command` in any Claude Code session in that project.
 
-### The 20 included skills
+### The 21 included skills
 
 #### Development Workflow
 
@@ -224,6 +224,7 @@ It's now available as `/my-command` in any Claude Code session in that project.
 | Command | Problem it solves |
 |---------|------------------|
 | `/deep-research` | Web searches return shallow results. This runs a thinking loop — searches, evaluates what's missing, searches again — until the research is comprehensive. |
+| `/inspiration` | Before building something, you want to know how others solved it — without cargo-culting everything they did. Give it a GitHub repo URL and it produces a structured Keep / Adapt / Discard analysis: fetches repo metadata first (bails early on duds), checks Issues/PRs for what maintainers regret, and anchors recommendations to your actual project context. Works in plan mode too. |
 | `/self-learn` | Debugging breakthroughs and workarounds discovered in a session get lost. This extracts them into persistent memory so they're available in future sessions. |
 | `/autoloop [interval] [command]` | Polling a deploy or watching test results requires you to keep typing. This runs any command on a recurring interval (e.g. `/autoloop 5m /deploy-check`). |
 | `/offload` | Long background tasks (scraping, batch processing, analysis) block the conversation. This delegates to a subagent and lets you continue working while it runs. |
