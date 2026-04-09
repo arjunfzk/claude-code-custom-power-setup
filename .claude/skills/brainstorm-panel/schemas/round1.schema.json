@@ -32,10 +32,12 @@
     },
     "assumptions": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "tradeoffs": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -50,10 +52,12 @@
     },
     "risks": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "open_questions": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "what_the_moderator_state_might_be_missing": {
