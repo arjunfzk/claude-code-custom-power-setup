@@ -24,6 +24,7 @@
     "user_goal": { "type": "string" },
     "hard_constraints": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "available_models": {
@@ -59,6 +60,8 @@
           "why_it_matters": { "type": "string" },
           "positions": {
             "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
             "properties": {
               "M1": { "type": "string" },
               "M2": { "type": "string" },
@@ -70,6 +73,7 @@
     },
     "conflicts": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -78,6 +82,8 @@
           "topic": { "type": "string" },
           "positions": {
             "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
             "properties": {
               "M1": { "type": "string" },
               "M2": { "type": "string" },
@@ -89,6 +95,7 @@
     },
     "minority_views": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -106,10 +113,12 @@
     },
     "open_questions": {
       "type": "array",
+      "minItems": 1,
       "items": { "$ref": "#/$defs/sourcedItem" }
     },
     "risks": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -134,6 +143,7 @@
   "$defs": {
     "proposalIndexEntry": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["title", "core_claim"],
       "properties": {
         "title": { "type": "string" },
@@ -142,6 +152,7 @@
     },
     "sourcedItem": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["text", "sources"],
       "properties": {
         "text": { "type": "string" },

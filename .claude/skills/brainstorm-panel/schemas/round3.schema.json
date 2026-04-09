@@ -28,6 +28,8 @@
           "topic": { "type": "string" },
           "positions": {
             "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
             "properties": {
               "M1": { "type": "string" },
               "M2": { "type": "string" },
@@ -54,8 +56,8 @@
     },
     "ranked_recommendations": {
       "type": "array",
-      "minItems": 1,
-      "maxItems": 5,
+      "minItems": 3,
+      "maxItems": 3,
       "items": {
         "type": "object",
         "additionalProperties": false,
