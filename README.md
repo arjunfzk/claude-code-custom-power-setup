@@ -13,7 +13,7 @@ This is not a starter scaffold — it's a **Claude Code configuration layer** th
 | Project CLAUDE.md | `CLAUDE.md` | Project instructions for Claude — stack, commands, LLM rules |
 | Project settings | `.claude/settings.json` | Allow/deny rules + 7 hook event handlers |
 | MCP servers | `.mcp.json` | context7 (live docs) + sequential-thinking (structured reasoning) |
-| Slash commands | `.claude/skills/` | 21 custom `/commands` |
+| Slash commands | `.claude/skills/` | 22 custom `/commands` |
 | Subagents | `.claude/agents/` | 12 specialized AI subagents |
 | Context rules | `.claude/rules/` | Domain-specific rules loaded on demand |
 | Ignore list | `.claudeignore` | Tells Claude to skip logs, weights, caches |
@@ -181,7 +181,7 @@ EOF
 
 It's now available as `/my-command` in any Claude Code session in that project.
 
-### The 21 included skills
+### The 22 included skills
 
 #### Development Workflow
 
@@ -189,6 +189,7 @@ It's now available as `/my-command` in any Claude Code session in that project.
 |---------|------------------|
 | `/new-project` | Starting a new LLM app from scratch takes hours — directory layout, Docker, logging config, pyproject.toml, test structure. This scaffolds the entire thing with one command. |
 | `/brainstorm` | Claude tends to jump to the first solution. This forces multi-round research with web lookups and prior-art checks before committing to an approach. |
+| `/brainstorm-panel` | A single model has blind spots. This runs Claude, Codex, and Gemini in parallel using a Moderator-State protocol — independent proposals, structured critique, and synthesis. 5 quality tiers (`quick` to `max`) control model selection and reasoning effort across all three CLIs. |
 | `/search-first` | Claude often writes new code for something that already exists in the codebase. This searches first, surfacing reusable patterns before writing anything. |
 | `/update-context` | `docs/context.md` and `docs/architecture.md` go stale after significant changes. This reads the current codebase and rewrites both docs in one shot. |
 
