@@ -146,14 +146,15 @@ codex exec \
 ### M3 / Gemini
 
 ```bash
-gemini -p "{ROUND1_PROMPT_M3}" \
+gemini -p "IMPORTANT: Do NOT read files under .claude/ or ~/.claude/ or .agents/.
+  {ROUND1_PROMPT_M3}" \
   {QUALITY_FLAGS_M3} \
-  -o json > "$RUN_DIR/round1_m3.raw"
+  -o text > "$RUN_DIR/round1_m3.raw"
 ```
 
-For Gemini, extract JSON from raw output:
+**Note:** Gemini `-o json` returns a wrapper object `{response, stats, error}`, not the raw schema object. Use `-o text` and extract JSON from text output:
 ```bash
-awk 'BEGIN{p=0} /^\{/ {p=1} p {print}' "$RUN_DIR/round1_m3.raw" > "$RUN_DIR/round1_m3.json"
+jq -Rs 'match("\\{[\\s\\S]*\\}") | .string' "$RUN_DIR/round1_m3.raw" | jq -r '.' | jq -e . > "$RUN_DIR/round1_m3.json"
 ```
 
 ### Parse Repair
@@ -223,11 +224,17 @@ YOUR_ROUND1
 ### M1 / Claude (fresh isolated call)
 
 ```bash
-claude -p "{ROUND2_PROMPT_M1}" \
+claude -p "IMPORTANT: Do NOT read files under .claude/ or ~/.claude/ or .agents/.
+  {ROUND2_PROMPT_M1}" \
   --no-session-persistence \
   {QUALITY_FLAGS_M1} \
-  --output-format json \
-  > "$RUN_DIR/round2_m1.json"
+  --output-format text \
+  > "$RUN_DIR/round2_m1.raw"
+```
+
+**Note:** `--output-format json` returns conversation wrapper metadata, not the raw schema object. Use `--output-format text` and extract JSON from the text output:
+```bash
+jq -Rs 'match("\\{[\\s\\S]*\\}") | .string' "$RUN_DIR/round2_m1.raw" | jq -r '.' | jq -e . > "$RUN_DIR/round2_m1.json"
 ```
 
 ### M2 / Codex
@@ -245,9 +252,15 @@ codex exec \
 ### M3 / Gemini
 
 ```bash
-gemini -p "{ROUND2_PROMPT_M3}" \
+gemini -p "IMPORTANT: Do NOT read files under .claude/ or ~/.claude/ or .agents/.
+  {ROUND2_PROMPT_M3}" \
   {QUALITY_FLAGS_M3} \
-  -o json > "$RUN_DIR/round2_m3.raw"
+  -o text > "$RUN_DIR/round2_m3.raw"
+```
+
+Extract JSON from text (same as Step 3):
+```bash
+jq -Rs 'match("\\{[\\s\\S]*\\}") | .string' "$RUN_DIR/round2_m3.raw" | jq -r '.' | jq -e . > "$RUN_DIR/round2_m3.json"
 ```
 
 All three run in parallel. Same parse + repair rules as Step 3.
@@ -269,7 +282,8 @@ Your job is different from Round 2:
 - Do NOT soften disagreements. If you still disagree, say so clearly.
 ```
 
-3. Same parallel execution pattern. Same schema (`round2.schema.json`, round=3).
+3. Same parallel execution pattern. Uses `schemas/round3.schema.json` (not `round2.schema.json` — Round 3 has different required fields: `disagreement_ledger`, `failure_modes`, `ranked_recommendations`).
+4. For Codex: `--output-schema schemas/round3.schema.json`. For Claude/Gemini: same text extraction as Round 2.
 
 ## Step 7: Final Synthesis (Inline)
 
@@ -341,7 +355,7 @@ If `--out` was provided, save the report to that path.
 ## Rules and Guards
 
 - Freeze M1 Round 1 before any shell call.
-- Same schema and prompt contract for all models in the same round.
+- Same prompt contract for all models in the same round. Schema enforcement is Codex-only (`--output-schema`); Claude and Gemini use prompt-based JSON with validation + retry.
 - Do not pass peers' full Round 1 outputs into Round 2.
 - Moderator compaction must preserve source attribution.
 - Treat compact state as lossy and challengeable, never authoritative.
@@ -364,6 +378,6 @@ If `--out` was provided, save the report to that path.
 | Dropping parse-failed model silently | Hides protocol defects | Retry once, record drop in notes |
 | Using vendor names in prompts/synthesis | Brand anchoring | M1/M2/M3 everywhere |
 | Moderator state too long | Bloats R2 input, weakens critique | Keep within token targets |
-| Omitting `what_moderator_might_be_missing` | Removes anti-flattening guard | Required in every schema |
+| Omitting `what_the_moderator_state_might_be_missing` | Removes anti-flattening guard | Required in every schema |
 
 $ARGUMENTS

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Round 3 Convergence Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model_id",
+    "round",
+    "disagreement_ledger",
+    "failure_modes",
+    "ranked_recommendations",
+    "what_the_moderator_state_might_be_missing",
+    "confidence"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "model_id": { "enum": ["M1", "M2", "M3"] },
+    "round": { "const": 3 },
+    "disagreement_ledger": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["topic", "positions", "resolution_status"],
+        "properties": {
+          "topic": { "type": "string" },
+          "positions": {
+            "type": "object",
+            "properties": {
+              "M1": { "type": "string" },
+              "M2": { "type": "string" },
+              "M3": { "type": "string" }
+            }
+          },
+          "resolution_status": { "enum": ["resolved", "unresolved", "partially_resolved"] }
+        }
+      }
+    },
+    "failure_modes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scenario", "severity", "mitigation"],
+        "properties": {
+          "scenario": { "type": "string" },
+          "severity": { "enum": ["low", "medium", "high", "critical"] },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "ranked_recommendations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "recommendation", "rationale", "confidence"],
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1 },
+          "recommendation": { "type": "string" },
+          "rationale": { "type": "string" },
+          "confidence": { "enum": ["low", "medium", "high"] }
+        }
+      }
+    },
+    "what_the_moderator_state_might_be_missing": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "confidence": { "enum": ["low", "medium", "high"] }
+  }
+}

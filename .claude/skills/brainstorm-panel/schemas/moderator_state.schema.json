@@ -34,6 +34,8 @@
     },
     "proposal_index": {
       "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "M1": { "$ref": "#/$defs/proposalIndexEntry" },
         "M2": { "$ref": "#/$defs/proposalIndexEntry" },
@@ -42,10 +44,12 @@
     },
     "agreement_points": {
       "type": "array",
+      "minItems": 1,
       "items": { "$ref": "#/$defs/sourcedItem" }
     },
     "decision_axes": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,

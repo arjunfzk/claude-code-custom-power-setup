@@ -24,6 +24,7 @@
     "summary_judgment": { "type": "string" },
     "agreements_to_keep": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "disagreements_with_state": {
