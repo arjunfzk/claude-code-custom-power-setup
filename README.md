@@ -189,7 +189,7 @@ It's now available as `/my-command` in any Claude Code session in that project.
 |---------|------------------|
 | `/new-project` | Starting a new LLM app from scratch takes hours — directory layout, Docker, logging config, pyproject.toml, test structure. This scaffolds the entire thing with one command. |
 | `/brainstorm` | Claude tends to jump to the first solution. This forces multi-round research with web lookups and prior-art checks before committing to an approach. |
-| `/brainstorm-panel` | A single model has blind spots. This runs Claude, Codex, and Gemini in parallel using a Moderator-State protocol — independent proposals, structured critique, and synthesis. 5 quality tiers (`quick` to `max`) control model selection and reasoning effort across all three CLIs. |
+| `/brainstorm-panel` | A single model has blind spots. This runs Claude, Codex, and Gemini in parallel using a Moderator-State protocol — independent proposals, structured critique, and synthesis. 5 quality tiers (`quick` to `max`) control model selection and reasoning effort across all three CLIs. See [brainstorm-panel usage](#brainstorm-panel-usage) below. |
 | `/search-first` | Claude often writes new code for something that already exists in the codebase. This searches first, surfacing reusable patterns before writing anything. |
 | `/update-context` | `docs/context.md` and `docs/architecture.md` go stale after significant changes. This reads the current codebase and rewrites both docs in one shot. |
 
@@ -479,6 +479,55 @@ Experiments:
   /new-experiment      # Isolated worktree for risky changes
   /compare-experiments # Compare results when done
   /cleanup-experiments # Clean up stale worktrees
+```
+
+---
+
+## Brainstorm Panel Usage
+
+`/brainstorm-panel` orchestrates a multi-model brainstorm between Claude, Codex, and Gemini.
+
+```
+/brainstorm-panel <topic> [--quality <tier>] [--rounds 2|3] [--focus "angle"] [--context "extra"] [--constraints "c1; c2"] [--out path/report.md] [--keep-artifacts]
+```
+
+**Parameters:**
+
+| Flag | Default | What it does |
+|------|---------|-------------|
+| `<topic>` | *(required)* | The brainstorm question |
+| `--quality` | `standard` | Model/effort tier — see table below |
+| `--rounds` | `2` | Number of deliberation rounds (`2` or `3`) |
+| `--focus` | none | Narrow the brainstorm angle |
+| `--context` | none | Extra context for all models |
+| `--constraints` | none | Hard constraints (semicolon-separated) |
+| `--out` | inline | Save report to a file path |
+| `--keep-artifacts` | off | Print the temp directory path to inspect intermediate JSON |
+
+**Quality tiers:**
+
+| Tier | Claude | Codex | Gemini | Protocol |
+|------|--------|-------|--------|----------|
+| `quick` | Sonnet / low | o4-mini / minimal | Gemini 3 Flash | 2 rounds |
+| `standard` | Sonnet / medium | GPT-5.4 / low | Gemini 3 Flash | 2 rounds |
+| `high` | Sonnet / high | GPT-5.4 / medium | Gemini 3.1 Pro | 2 rounds |
+| `pro` | Opus / max | GPT-5.4 / high | Gemini 3.1 Pro | 2 rounds |
+| `max` | Opus / max | GPT-5.4 / xhigh | Gemini 3.1 Pro | 3 rounds |
+
+**Examples:**
+
+```bash
+# Simple brainstorm
+/brainstorm-panel best architecture for a RAG pipeline with 10M documents
+
+# With focus and constraints
+/brainstorm-panel API design for multi-tenant SaaS --focus "auth and isolation" --constraints "must use FastAPI; no microservices"
+
+# High quality, save output
+/brainstorm-panel career pivot strategy --quality pro --out docs/career-brainstorm.md
+
+# Maximum quality, 3 rounds, keep intermediate files
+/brainstorm-panel migrate from PostgreSQL to CockroachDB --quality max --keep-artifacts --context "current DB is 500GB, 50k QPS"
 ```
 
 ---
