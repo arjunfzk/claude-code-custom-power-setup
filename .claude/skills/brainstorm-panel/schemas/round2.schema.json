@@ -29,6 +29,7 @@
     },
     "disagreements_with_state": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -42,18 +43,22 @@
     },
     "state_corrections": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "surviving_ideas": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "risks": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "open_questions": {
       "type": "array",
+      "minItems": 1,
       "items": { "type": "string" }
     },
     "what_the_moderator_state_might_be_missing": {
