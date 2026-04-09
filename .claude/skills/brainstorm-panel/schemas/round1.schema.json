@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Round 1 Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model_id",
+    "round",
+    "problem_restatement",
+    "proposal_title",
+    "executive_summary",
+    "core_approach",
+    "assumptions",
+    "tradeoffs",
+    "risks",
+    "open_questions",
+    "what_the_moderator_state_might_be_missing",
+    "confidence"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "model_id": { "enum": ["M1", "M2", "M3"] },
+    "round": { "const": 1 },
+    "problem_restatement": { "type": "string" },
+    "proposal_title": { "type": "string" },
+    "executive_summary": { "type": "string" },
+    "core_approach": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "type": "string" }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tradeoffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["axis", "choice", "benefit", "cost"],
+        "properties": {
+          "axis": { "type": "string" },
+          "choice": { "type": "string" },
+          "benefit": { "type": "string" },
+          "cost": { "type": "string" }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "what_the_moderator_state_might_be_missing": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "confidence": { "enum": ["low", "medium", "high"] }
+  }
+}
