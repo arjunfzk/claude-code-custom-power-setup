@@ -67,12 +67,13 @@ Dry-run first to see what would change:
 ./install.sh --dry-run
 ```
 
-After installing, **restart Claude Code**. Then run these once inside any Claude Code session to install community plugins:
+After installing, **restart Claude Code**. Then run this once inside any Claude Code session to install the Superpowers plugin:
 
 ```
 /install-github superpowers-ai/superpowers
-/install-github superpowers-ai/gsd
 ```
+
+See [Superpowers Plugin](#superpowers-plugin) below for what this adds.
 
 ### Option B — Per-project copy
 
@@ -456,6 +457,119 @@ Rules in `.claude/rules/` are loaded automatically when relevant context is dete
 
 ---
 
+## Superpowers Plugin
+
+[Superpowers](https://github.com/superpowers-ai/superpowers) is a community plugin that adds **workflow discipline skills** — structured approaches for brainstorming, debugging, test-driven development, code review, and plan execution. Where the custom skills in this template give Claude *what to do* (review code, research a topic, deploy), Superpowers gives Claude *how to approach work* (brainstorm before building, write tests before code, verify before claiming done).
+
+### What it adds
+
+| Skill | What it enforces |
+|-------|-----------------|
+| `brainstorming` | Explores intent, requirements, and design *before* jumping to code. Auto-invoked before any creative work. |
+| `systematic-debugging` | Scientific method for bugs: observe, hypothesize, test, conclude. Prevents shotgun debugging. |
+| `test-driven-development` | Write failing test first, then implementation, then refactor. Prevents "I'll add tests later." |
+| `writing-plans` | Structured implementation plans before touching code. For multi-step tasks. |
+| `executing-plans` | Execute plans with review checkpoints. Prevents drift from the plan. |
+| `verification-before-completion` | Run verification commands and confirm output *before* claiming work is done. Evidence before assertions. |
+| `requesting-code-review` | Structured review process when completing features. |
+| `subagent-driven-development` | Parallelize independent implementation tasks using subagents. |
+| `using-git-worktrees` | Isolated feature branches with safety verification. |
+
+### How it interacts with the custom skills
+
+Superpowers and the custom skills in this template serve different layers:
+
+```
+User says: "Build a caching layer for my RAG pipeline"
+  ↓
+Superpowers brainstorming    → explores intent, requirements, alternatives
+  ↓
+/design-agent                → designs the architecture (state graph, components)
+  ↓
+Superpowers writing-plans    → creates step-by-step implementation plan
+  ↓
+/search-first                → checks for existing patterns before writing
+  ↓
+(implementation)             → hooks auto-format, auto-test on each save
+  ↓
+/review                      → LLM-specific code review
+  ↓
+Superpowers verification     → confirms tests pass before declaring done
+```
+
+Superpowers skills auto-invoke based on context — you don't need to call them explicitly. The custom `/skills` are explicit commands you invoke when you need them.
+
+### Installing Superpowers
+
+Run once inside any Claude Code session:
+
+```
+/install-github superpowers-ai/superpowers
+```
+
+---
+
+## What Goes Where — Decision Guide
+
+Claude Code has several extension points. Use this guide to decide where new behavior belongs:
+
+```
+"I want Claude to..."
+  │
+  ├─ "...always do X on every file write/commit/session"
+  │   → Hook (settings.json)
+  │   Examples: auto-format, block secrets, run tests
+  │
+  ├─ "...follow a multi-step procedure when I ask"
+  │   → Skill (.claude/skills/name/SKILL.md)
+  │   Examples: /review, /deploy-check, /new-experiment
+  │
+  ├─ "...use a specialist identity for focused work"
+  │   → Agent (.claude/agents/name.md)
+  │   Examples: security-reviewer, rag-debugger, test-writer
+  │
+  ├─ "...know domain rules when working in a certain area"
+  │   → Rule (.claude/rules/topic.md)
+  │   Examples: LLM call patterns, RAG pipeline conventions
+  │
+  ├─ "...look up live external data (docs, APIs, databases)"
+  │   → MCP Server (.mcp.json)
+  │   Examples: context7 for library docs, sequential-thinking
+  │
+  ├─ "...follow project-wide instructions every message"
+  │   → CLAUDE.md
+  │   Examples: stack choices, coding standards, forbidden patterns
+  │
+  └─ "...never be allowed to do X, regardless of instructions"
+      → Permission deny rule (settings.json permissions.deny)
+      Examples: block rm -rf, block .env reads, block force push
+```
+
+### Quick comparison
+
+| Mechanism | Trigger | Scope | Token cost | Use when... |
+|-----------|---------|-------|------------|-------------|
+| **Hook** | Automatic (tool use, session events) | Every matching action | Zero (runs outside context) | Enforcement that can't depend on Claude remembering |
+| **Skill** | Explicit (`/command`) | On-demand | Loaded when invoked | Reusable multi-step procedures |
+| **Agent** | Claude dispatches or you request | Isolated context | Separate model call | Specialist work benefiting from focused expertise |
+| **Rule** | Auto-loaded by relevance | When Claude detects context match | Loaded conditionally | Domain knowledge for specific areas of the codebase |
+| **MCP Server** | Claude calls as a tool | Per-project | Tool call only | Live external data Claude can't get from local files |
+| **CLAUDE.md** | Always loaded | Every message | Always in context | Project-wide instructions that apply everywhere |
+| **Permission deny** | Blocks before execution | Every matching tool call | Zero | Hard safety limits that nothing should override |
+
+### Common mistakes
+
+| Mistake | Why it's wrong | Fix |
+|---------|---------------|-----|
+| Putting formatting rules in CLAUDE.md | Claude might forget; costs tokens every message | Use a PostToolUse hook — enforced, zero context cost |
+| Making an agent for a procedure | Agents are specialists, not checklists | Use a skill for step-by-step procedures |
+| Putting rarely-used rules in CLAUDE.md | Wastes context on every message | Move to `.claude/rules/` for conditional loading |
+| Using a skill for something that must always happen | Users forget to invoke skills | Use a hook for mandatory behavior |
+| Hardcoding library docs in rules | Docs go stale | Use an MCP server for live documentation |
+| Using a hook for complex multi-step workflows | Hooks are one-shot checks, not conversations | Use a skill that Claude can follow interactively |
+
+---
+
 ## Daily Workflow
 
 ```
@@ -702,7 +816,6 @@ If your global file says "use uv" but a project file says "use poetry", Claude u
 ## Related
 
 - [Official Claude Code docs](https://docs.anthropic.com/en/docs/claude-code)
-- [GSD (Get Shit Done) plugin](https://github.com/superpowers-ai/gsd) — project planning + execution workflows
-- [Superpowers plugin](https://github.com/superpowers-ai/superpowers) — systematic debugging, TDD, code review workflows
+- [Superpowers plugin](https://github.com/superpowers-ai/superpowers) — workflow discipline: brainstorming, TDD, debugging, code review, plan execution
 - [context7 MCP](https://github.com/upstash/context7) — live library documentation
 - [sequential-thinking MCP](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking) — structured reasoning
