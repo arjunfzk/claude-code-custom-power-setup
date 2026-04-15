@@ -1,8 +1,107 @@
 # Claude Code Power Setup — Python / LLM Engineer Template
 
-A battle-tested Claude Code configuration for Python LLM engineers. Includes hooks that auto-format, auto-test, and block dangerous commands; a full permission system; MCP servers for live docs and structured reasoning; 20+ slash commands; and 12 specialized subagents.
+> **One install. Every project gets auto-formatting, auto-testing, secret scanning, 22 slash commands, 12 specialist AI agents, and live documentation — without changing a single line of your code.**
 
-This is not a starter scaffold — it's a **Claude Code configuration layer** that sits on top of any Python/FastAPI/LangChain project.
+A battle-tested Claude Code configuration layer for Python LLM engineers. This is not a starter scaffold — it sits on top of any Python/FastAPI/LangChain project and makes Claude Code dramatically more capable.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     YOUR EXISTING PROJECT                           │
+│  src/  tests/  prompts/  docker/  ...                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                 CLAUDE CODE POWER SETUP (this repo)                 │
+│                                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
+│  │  13 Hooks │  │ 22 Skills│  │12 Agents │  │  2 MCP Servers   │   │
+│  │          │  │          │  │          │  │                  │   │
+│  │ Auto-fmt │  │ /review  │  │ security │  │ context7 (docs)  │   │
+│  │ Auto-test│  │ /deploy  │  │ rag-debug│  │ seq-thinking     │   │
+│  │ Block    │  │ /research│  │ llm-arch │  │                  │   │
+│  │ secrets  │  │ /brainstm│  │ test-writ│  │                  │   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘   │
+│       │              │              │                  │             │
+│  Enforced        On-demand     Auto-dispatched    Always-on        │
+│  automatically   via /command  by Claude           tool access      │
+├─────────────────────────────────────────────────────────────────────┤
+│  CLAUDE.md  │  settings.json  │  .mcp.json  │  rules/  │  .ignore  │
+│  (instructions)  (permissions)   (servers)    (context)   (skip)    │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Table of Contents
+
+- [Why This Exists](#why-this-exists)
+- [Quick Start](#quick-start)
+- [What's Included](#whats-included)
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Daily Workflow](#daily-workflow)
+- [Skills (Slash Commands)](#skills-slash-commands)
+- [Subagents](#subagents)
+- [Hook System](#hook-system)
+- [MCP Servers](#mcp-servers)
+- [Context Rules](#context-rules)
+- [Superpowers Plugin](#superpowers-plugin)
+- [What Goes Where — Decision Guide](#what-goes-where--decision-guide)
+- [Global CLAUDE.md](#global-claudemd)
+- [Brainstorm Panel Usage](#brainstorm-panel-usage)
+- [File Structure](#file-structure)
+- [What NOT to Do](#what-not-to-do)
+- [Customization](#customization)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Why This Exists
+
+Claude Code out of the box is powerful but undisciplined. It forgets to format, skips tests, occasionally writes secrets into commits, and approaches complex problems by jumping straight to code. You can tell it not to — but instructions in CLAUDE.md are suggestions, and suggestions get forgotten under pressure.
+
+This setup fixes that by working at three levels:
+
+```
+Level 1: ENFORCEMENT (Hooks)
+  Claude writes a file → ruff auto-formats it
+  Claude commits code  → secrets scanner blocks if it finds keys
+  Claude is on main    → write is blocked, told to create a branch
+  You can't forget. Claude can't forget. It's automatic.
+
+Level 2: CAPABILITY (Skills + Agents)
+  /review         → LLM-specific code review (not generic)
+  /debug-llm      → parses your actual LLM call logs
+  /full-review    → 9 specialist agents review in parallel
+  /brainstorm     → researches before coding, not after
+  These give Claude abilities it doesn't have by default.
+
+Level 3: KNOWLEDGE (MCP + Rules + CLAUDE.md)
+  context7        → live library docs (not stale training data)
+  rules/          → domain knowledge loaded only when relevant
+  CLAUDE.md       → your stack, your commands, your standards
+  Claude knows your project, not just Python in general.
+```
+
+The result: Claude Code that formats every file, tests every change, blocks every secret, reviews like a specialist, and researches before it builds.
+
+---
+
+## Quick Start
+
+```bash
+# Clone and install globally (works in every project)
+git clone https://github.com/arjunfzk/claude-code-custom-power-setup.git
+cd claude-code-custom-power-setup
+./install.sh
+
+# Restart Claude Code, then install the Superpowers plugin
+/install-github superpowers-ai/superpowers
+
+# Copy MCP config into your project (one-time per project)
+cp .mcp.json /path/to/your-project/
+```
+
+Done. Open any project with Claude Code — hooks are active, skills are available, agents are ready.
 
 ---
 
@@ -146,6 +245,54 @@ If they show "failed", the package names are the common culprit. Verify `.mcp.js
 
 ---
 
+## Daily Workflow
+
+This is what using the setup actually looks like day-to-day:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MORNING                                   │
+│                                                             │
+│  $ claude                                                   │
+│  ⚠ docs/context.md is 5 days old — run /update-context     │
+│                                                             │
+│  > /update-context           # refresh project docs         │
+├─────────────────────────────────────────────────────────────┤
+│                    WHILE CODING                              │
+│                                                             │
+│  > "add retry logic to the embedding service"               │
+│    ├─ Claude writes src/services/embeddings.py              │
+│    ├─ [hook] ruff auto-formats ✓                            │
+│    ├─ [hook] tests/test_embeddings.py runs ✓                │
+│    └─ Claude sees test results, continues                   │
+│                                                             │
+│  > /search-first             # before writing new code      │
+│  > /brainstorm               # before architectural choices │
+├─────────────────────────────────────────────────────────────┤
+│                    BEFORE COMMITTING                         │
+│                                                             │
+│  > /review                   # LLM-specific code review     │
+│  > git commit                                               │
+│    ├─ [hook] scans for hardcoded secrets ✓                  │
+│    ├─ [hook] tests migration reversibility ✓                │
+│    └─ commit succeeds                                       │
+├─────────────────────────────────────────────────────────────┤
+│                    WHEN STUCK                                │
+│                                                             │
+│  > /debug-llm                # parse LLM call logs          │
+│  > /deep-research            # multi-round web research     │
+│  > /cost-aware-pipeline      # audit for token waste        │
+├─────────────────────────────────────────────────────────────┤
+│                    EXPERIMENTS                                │
+│                                                             │
+│  > /new-experiment           # isolated git worktree        │
+│  > /compare-experiments      # side-by-side results         │
+│  > /cleanup-experiments      # remove stale worktrees       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Skills (Slash Commands)
 
 ### What skills are
@@ -183,6 +330,30 @@ EOF
 It's now available as `/my-command` in any Claude Code session in that project.
 
 ### The 22 included skills
+
+```
+Skills by Category
+==================
+
+DEVELOPMENT WORKFLOW          CODE REVIEW & QUALITY
+├── /new-project              ├── /review
+├── /brainstorm               ├── /full-review
+├── /brainstorm-panel         ├── /second-opinion
+├── /search-first             └── /deploy-check
+└── /update-context
+
+LLM ENGINEERING               EXPERIMENTS
+├── /debug-llm                ├── /new-experiment
+├── /cost-aware-pipeline      ├── /compare-experiments
+└── /design-agent             ├── /cleanup-experiments
+                              ├── /freeze
+RESEARCH & PLANNING           └── /unfreeze
+├── /deep-research
+├── /inspiration
+├── /self-learn
+├── /autoloop
+└── /offload
+```
 
 #### Development Workflow
 
@@ -281,6 +452,40 @@ The `description` field is critical — Claude uses it to decide when to automat
 
 ### The 12 included agents
 
+```
+Agent Specializations
+=====================
+
+ARCHITECTURE                    CODE QUALITY
+├── llm-architect               ├── code-reviewer
+│   model selection, serving,   │   LLM-specific: logging,
+│   caching, multi-model        │   resources, security, types
+│   routing                     │
+└── architect                   ├── security-reviewer
+    LangGraph state graphs,     │   prompt injection, auth,
+    agent patterns,             │   secrets, API key exposure
+    guardrails                  │
+                                └── performance-reviewer
+OPERATIONS                          N+1, async blocking,
+├── docker-deployer                 memory leaks, hot paths
+│   images, compose, health
+│   checks, resources           ANALYSIS
+│                               ├── llm-reviewer
+├── log-cleaner                 │   cost, latency, quality
+│   zombies, old logs,          │   from logs/llm/*.json
+│   memory, disk                │
+│                               ├── rag-debugger
+└── prompt-optimizer            │   chunks, scores, embeddings
+    token efficiency,           │   from logs/rag/
+    clarity, effectiveness      │
+                                ├── test-writer
+                                │   pytest + mocked LLM fixtures
+                                │
+                                └── agent-evaluator
+                                    trajectory, guardrails,
+                                    loop termination
+```
+
 | Agent | What it is | Problem it solves |
 |-------|-----------|------------------|
 | `llm-architect` | Expert in model selection, serving infrastructure, caching, multi-model routing | Choosing the wrong model tier or serving approach is expensive to fix later. This agent evaluates your requirements and recommends the right architecture before you build. |
@@ -298,30 +503,6 @@ The `description` field is critical — Claude uses it to decide when to automat
 
 ---
 
-## MCP Servers
-
-Both servers are auto-started when you open a Claude Code session in this project.
-
-### context7
-
-Live documentation for any library. Claude uses this to look up current API syntax instead of relying on potentially stale training data.
-
-**When Claude uses it automatically:** Any time it needs to call a library function and the API might have changed (LangChain, FastAPI, Pydantic v2, SQLAlchemy 2.0, etc.)
-
-**You can trigger it explicitly:**
-> "How do I use `selectinload` in SQLAlchemy 2.0?" → Claude fetches the live docs
-
-### sequential-thinking
-
-Structured multi-step reasoning. Breaks complex problems into sequential steps with explicit intermediate conclusions.
-
-**When Claude uses it automatically:** Complex architecture decisions, multi-step debugging, planning tasks with dependencies.
-
-**You can trigger it explicitly:**
-> "Use sequential thinking to evaluate our current architecture and find bottlenecks"
-
----
-
 ## Hook System
 
 ### What hooks are
@@ -330,23 +511,44 @@ Hooks are shell commands that Claude Code runs automatically at specific points 
 
 **The problem they solve:** Claude is a language model. It will try its best to follow your CLAUDE.md rules, but under pressure it can forget to run `ruff`, miss that you're on `main`, or write a migration file directly. Hooks enforce rules at the tool level — before or after the action — so compliance isn't optional and doesn't depend on Claude remembering.
 
-**The two hook types:**
+### How hooks work
 
-- **PreToolUse** — runs before Claude uses a tool. Can return exit code 2 to **block** the action entirely and show Claude an error message.
+```
+                    HOOK LIFECYCLE
+                    ==============
+
+  PreToolUse                              PostToolUse
+  (runs BEFORE tool)                      (runs AFTER tool)
+       │                                       │
+       ▼                                       ▼
+  ┌─────────┐    exit 0    ┌──────────┐   ┌─────────┐
+  │  Check   │────────────▶│  Tool    │──▶│  React  │
+  │  & Gate  │             │ Executes │   │  & Fix  │
+  └─────────┘              └──────────┘   └─────────┘
+       │                                       │
+       │ exit 2                                │
+       ▼                                       ▼
+  ┌─────────┐                            ┌─────────┐
+  │ BLOCKED │                            │ Format, │
+  │ + error │                            │ test,   │
+  │ message │                            │ notify  │
+  └─────────┘                            └─────────┘
+```
+
+- **PreToolUse** — runs before Claude uses a tool. Exit code 2 **blocks** the action entirely.
 - **PostToolUse** — runs after Claude uses a tool. Used for side effects like formatting or running tests.
-
-**Other lifecycle events:** `SessionStart` (when a session opens), `SessionEnd` (when it closes), `Stop` (when Claude finishes a response), `PreCompact` / `PostCompact` (around context compaction).
+- **Other events:** `SessionStart`, `SessionEnd`, `Stop`, `PreCompact`, `PostCompact`
 
 **Hook anatomy in `settings.json`:**
 
 ```json
 "PostToolUse": [
   {
-    "matcher": "Write|Edit",     ← which tool(s) trigger this hook
+    "matcher": "Write|Edit",
     "hooks": [
       {
         "type": "command",
-        "command": "..."         ← shell command that receives tool input as JSON on stdin
+        "command": "..."
       }
     ]
   }
@@ -357,7 +559,23 @@ The hook receives the tool call's input as JSON on `stdin`. For a `Write` call, 
 
 **Where hooks live:** In `settings.json` under the `hooks` key. Global hooks go in `~/.claude/settings.json` and apply everywhere. Project hooks go in `.claude/settings.json` and apply only in that repo. The installer merges the project hooks into your global file non-destructively.
 
-### The 13 hooks included and what each one prevents
+### The 13 hooks included
+
+```
+Hook Coverage Map
+=================
+
+SESSION LIFECYCLE          FILE WRITES (PostToolUse)     FILE WRITES (PreToolUse)
+├── SessionStart           ├── Auto-format Python        ├── Block writes on main
+│   stale docs warning     ├── Auto-test on src/ save    ├── Block dangerous SQL
+├── SessionEnd             └── Auto-sync pyproject.toml  └── Block migration edits
+│   kill dev servers
+├── Stop                   BASH COMMANDS (PreToolUse)    COMPACTION
+│   macOS notification     ├── Block pip install         ├── PreCompact: save state
+└──────────────────────    └── Block secrets on commit   └── PostCompact: restore
+                               + test migration
+                                 reversibility
+```
 
 #### Auto-format on every Python save (PostToolUse → Write/Edit)
 
@@ -439,6 +657,30 @@ The hook receives the tool call's input as JSON on `stdin`. For a `Write` call, 
 
 ---
 
+## MCP Servers
+
+Both servers are auto-started when you open a Claude Code session in this project.
+
+### context7
+
+Live documentation for any library. Claude uses this to look up current API syntax instead of relying on potentially stale training data.
+
+**When Claude uses it automatically:** Any time it needs to call a library function and the API might have changed (LangChain, FastAPI, Pydantic v2, SQLAlchemy 2.0, etc.)
+
+**You can trigger it explicitly:**
+> "How do I use `selectinload` in SQLAlchemy 2.0?" → Claude fetches the live docs
+
+### sequential-thinking
+
+Structured multi-step reasoning. Breaks complex problems into sequential steps with explicit intermediate conclusions.
+
+**When Claude uses it automatically:** Complex architecture decisions, multi-step debugging, planning tasks with dependencies.
+
+**You can trigger it explicitly:**
+> "Use sequential thinking to evaluate our current architecture and find bottlenecks"
+
+---
+
 ## Context Rules
 
 Rules in `.claude/rules/` are loaded automatically when relevant context is detected (e.g. if you're working on API endpoints, `api-endpoints.md` is loaded).
@@ -481,20 +723,30 @@ Superpowers and the custom skills in this template serve different layers:
 
 ```
 User says: "Build a caching layer for my RAG pipeline"
-  ↓
-Superpowers brainstorming    → explores intent, requirements, alternatives
-  ↓
-/design-agent                → designs the architecture (state graph, components)
-  ↓
-Superpowers writing-plans    → creates step-by-step implementation plan
-  ↓
-/search-first                → checks for existing patterns before writing
-  ↓
-(implementation)             → hooks auto-format, auto-test on each save
-  ↓
-/review                      → LLM-specific code review
-  ↓
-Superpowers verification     → confirms tests pass before declaring done
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  SUPERPOWERS (how to work)                                  │
+  │                                                             │
+  │  brainstorming ──▶ explores intent, requirements            │
+  │       │                                                     │
+  │  writing-plans ──▶ step-by-step implementation plan         │
+  │       │                                                     │
+  │  verification  ──▶ confirms tests pass before done          │
+  └───────┼─────────────────────────────────────────────────────┘
+          │
+  ┌───────▼─────────────────────────────────────────────────────┐
+  │  CUSTOM SKILLS (what to do)                                 │
+  │                                                             │
+  │  /design-agent  ──▶ architecture (state graph)              │
+  │  /search-first  ──▶ find existing patterns                  │
+  │  /review        ──▶ LLM-specific code review                │
+  └───────┼─────────────────────────────────────────────────────┘
+          │
+  ┌───────▼─────────────────────────────────────────────────────┐
+  │  HOOKS (enforcement)                                        │
+  │                                                             │
+  │  auto-format ✓  auto-test ✓  block secrets ✓               │
+  └─────────────────────────────────────────────────────────────┘
 ```
 
 Superpowers skills auto-invoke based on context — you don't need to call them explicitly. The custom `/skills` are explicit commands you invoke when you need them.
@@ -567,111 +819,6 @@ Claude Code has several extension points. Use this guide to decide where new beh
 | Using a skill for something that must always happen | Users forget to invoke skills | Use a hook for mandatory behavior |
 | Hardcoding library docs in rules | Docs go stale | Use an MCP server for live documentation |
 | Using a hook for complex multi-step workflows | Hooks are one-shot checks, not conversations | Use a skill that Claude can follow interactively |
-
----
-
-## Daily Workflow
-
-```
-Morning:
-  claude               # Start session — hooks warn if docs are stale
-  /update-context      # Refresh docs/context.md if needed
-
-While coding:
-  (write code)         # ruff auto-formats, tests auto-run on save
-  /search-first        # Before writing anything, check if it exists
-
-Before committing:
-  /review              # LLM-engineering code review
-  git commit           # Hooks scan for secrets, test migrations
-
-When stuck:
-  /debug-llm           # If LLM calls are failing/slow/expensive
-  /deep-research       # For complex architectural questions
-
-Experiments:
-  /new-experiment      # Isolated worktree for risky changes
-  /compare-experiments # Compare results when done
-  /cleanup-experiments # Clean up stale worktrees
-```
-
----
-
-## Brainstorm Panel Usage
-
-`/brainstorm-panel` orchestrates a multi-model brainstorm between Claude, Codex, and Gemini.
-
-```
-/brainstorm-panel <topic> [--quality <tier>] [--rounds 2|3] [--focus "angle"] [--context "extra"] [--constraints "c1; c2"] [--out path/report.md] [--keep-artifacts]
-```
-
-**Parameters:**
-
-| Flag | Default | What it does |
-|------|---------|-------------|
-| `<topic>` | *(required)* | The brainstorm question |
-| `--quality` | `standard` | Model/effort tier — see table below |
-| `--rounds` | `2` | Number of deliberation rounds (`2` or `3`) |
-| `--focus` | none | Narrow the brainstorm angle |
-| `--context` | none | Extra context for all models |
-| `--constraints` | none | Hard constraints (semicolon-separated) |
-| `--out` | inline | Save report to a file path |
-| `--keep-artifacts` | off | Print the temp directory path to inspect intermediate JSON |
-
-**Quality tiers:**
-
-| Tier | Claude | Codex | Gemini | Protocol |
-|------|--------|-------|--------|----------|
-| `quick` | Sonnet / low | o4-mini / minimal | Gemini 3 Flash | 2 rounds |
-| `standard` | Sonnet / medium | GPT-5.4 / low | Gemini 3 Flash | 2 rounds |
-| `high` | Sonnet / high | GPT-5.4 / medium | Gemini 3.1 Pro | 2 rounds |
-| `pro` | Opus / max | GPT-5.4 / high | Gemini 3.1 Pro | 2 rounds |
-| `max` | Opus / max | GPT-5.4 / xhigh | Gemini 3.1 Pro | 3 rounds |
-
-**Examples:**
-
-```bash
-# Simple brainstorm
-/brainstorm-panel best architecture for a RAG pipeline with 10M documents
-
-# With focus and constraints
-/brainstorm-panel API design for multi-tenant SaaS --focus "auth and isolation" --constraints "must use FastAPI; no microservices"
-
-# High quality, save output
-/brainstorm-panel career pivot strategy --quality pro --out docs/career-brainstorm.md
-
-# Maximum quality, 3 rounds, keep intermediate files
-/brainstorm-panel migrate from PostgreSQL to CockroachDB --quality max --keep-artifacts --context "current DB is 500GB, 50k QPS"
-```
-
----
-
-## File Structure
-
-```
-your-project/
-├── CLAUDE.md                    # Project instructions for Claude
-├── .mcp.json                    # MCP server config (context7, sequential-thinking)
-├── .claudeignore                # Files Claude should skip (logs, weights, caches)
-├── .claude/
-│   ├── settings.json            # Allow/deny rules + hooks
-│   ├── agents/                  # 12 specialized subagents
-│   ├── skills/                  # 20 slash commands
-│   └── rules/                   # Domain-specific context rules
-├── src/                         # FastAPI application code
-├── tests/                       # pytest tests (mock all LLM calls)
-├── prompts/                     # Prompt templates (.txt/.jinja2 — never inline)
-├── logs/
-│   ├── llm/                     # Every LLM call logged as JSON
-│   └── rag/                     # RAG chunk + score logs
-├── docs/
-│   ├── architecture.md          # Updated by /update-context
-│   └── context.md               # Current state, active work, decisions
-├── docker/
-│   ├── Dockerfile
-│   └── docker-compose.yml
-└── experiments/                 # git worktrees for isolated experiments
-```
 
 ---
 
@@ -773,16 +920,94 @@ Reference them in your global CLAUDE.md with `@import` syntax:
 ### Priority hierarchy
 
 ```
-User message
+User message                  ← strongest (always wins)
   ↓
-Project CLAUDE.md     (strongest — specific beats general)
+Project CLAUDE.md             ← specific beats general
   ↓
-Global CLAUDE.md      (your universal preferences)
+Global CLAUDE.md              ← your universal preferences
   ↓
-Claude's defaults     (weakest)
+Claude's defaults             ← weakest
 ```
 
 If your global file says "use uv" but a project file says "use poetry", Claude uses poetry for that project.
+
+---
+
+## Brainstorm Panel Usage
+
+`/brainstorm-panel` orchestrates a multi-model brainstorm between Claude, Codex, and Gemini.
+
+```
+/brainstorm-panel <topic> [--quality <tier>] [--rounds 2|3] [--focus "angle"] [--context "extra"] [--constraints "c1; c2"] [--out path/report.md] [--keep-artifacts]
+```
+
+**Parameters:**
+
+| Flag | Default | What it does |
+|------|---------|-------------|
+| `<topic>` | *(required)* | The brainstorm question |
+| `--quality` | `standard` | Model/effort tier — see table below |
+| `--rounds` | `2` | Number of deliberation rounds (`2` or `3`) |
+| `--focus` | none | Narrow the brainstorm angle |
+| `--context` | none | Extra context for all models |
+| `--constraints` | none | Hard constraints (semicolon-separated) |
+| `--out` | inline | Save report to a file path |
+| `--keep-artifacts` | off | Print the temp directory path to inspect intermediate JSON |
+
+**Quality tiers:**
+
+| Tier | Claude | Codex | Gemini | Protocol |
+|------|--------|-------|--------|----------|
+| `quick` | Sonnet / low | o4-mini / minimal | Gemini 3 Flash | 2 rounds |
+| `standard` | Sonnet / medium | GPT-5.4 / low | Gemini 3 Flash | 2 rounds |
+| `high` | Sonnet / high | GPT-5.4 / medium | Gemini 3.1 Pro | 2 rounds |
+| `pro` | Opus / max | GPT-5.4 / high | Gemini 3.1 Pro | 2 rounds |
+| `max` | Opus / max | GPT-5.4 / xhigh | Gemini 3.1 Pro | 3 rounds |
+
+**Examples:**
+
+```bash
+# Simple brainstorm
+/brainstorm-panel best architecture for a RAG pipeline with 10M documents
+
+# With focus and constraints
+/brainstorm-panel API design for multi-tenant SaaS --focus "auth and isolation" --constraints "must use FastAPI; no microservices"
+
+# High quality, save output
+/brainstorm-panel career pivot strategy --quality pro --out docs/career-brainstorm.md
+
+# Maximum quality, 3 rounds, keep intermediate files
+/brainstorm-panel migrate from PostgreSQL to CockroachDB --quality max --keep-artifacts --context "current DB is 500GB, 50k QPS"
+```
+
+---
+
+## File Structure
+
+```
+your-project/
+├── CLAUDE.md                    # Project instructions for Claude
+├── .mcp.json                    # MCP server config (context7, sequential-thinking)
+├── .claudeignore                # Files Claude should skip (logs, weights, caches)
+├── .claude/
+│   ├── settings.json            # Allow/deny rules + hooks
+│   ├── agents/                  # 12 specialized subagents
+│   ├── skills/                  # 22 slash commands
+│   └── rules/                   # Domain-specific context rules
+├── src/                         # FastAPI application code
+├── tests/                       # pytest tests (mock all LLM calls)
+├── prompts/                     # Prompt templates (.txt/.jinja2 — never inline)
+├── logs/
+│   ├── llm/                     # Every LLM call logged as JSON
+│   └── rag/                     # RAG chunk + score logs
+├── docs/
+│   ├── architecture.md          # Updated by /update-context
+│   └── context.md               # Current state, active work, decisions
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+└── experiments/                 # git worktrees for isolated experiments
+```
 
 ---
 
@@ -810,6 +1035,24 @@ If your global file says "use uv" but a project file says "use poetry", Claude u
 **Add a permission rule:** Edit `.claude/settings.json`. Glob patterns in `deny` block tool calls; patterns in `allow` pre-approve them without user prompts.
 
 **Add a context rule:** Create `.claude/rules/my-topic.md`. Include a brief description at the top so Claude knows when to load it.
+
+---
+
+## Contributing
+
+Contributions welcome. If you have a hook, skill, or agent that's useful for Python/LLM engineering:
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feat/my-skill`)
+3. Follow the existing patterns in `.claude/skills/` or `.claude/agents/`
+4. Test it in a real Claude Code session
+5. Open a PR with a description of what problem it solves
+
+---
+
+## License
+
+MIT
 
 ---
 
