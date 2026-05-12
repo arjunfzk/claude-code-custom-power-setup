@@ -1,6 +1,6 @@
 # Claude Code Power Setup — Python / LLM Engineer Template
 
-> **One install. Every project gets auto-formatting, auto-testing, secret scanning, 22 slash commands, 12 specialist AI agents, and live documentation — without changing a single line of your code.**
+> **One install. Every project gets auto-formatting, auto-testing, secret scanning, 33 slash commands, 12 specialist AI agents, and live documentation — without changing a single line of your code.**
 
 A battle-tested Claude Code configuration layer for Python LLM engineers. This is not a starter scaffold — it sits on top of any Python/FastAPI/LangChain project and makes Claude Code dramatically more capable.
 
@@ -12,7 +12,7 @@ A battle-tested Claude Code configuration layer for Python LLM engineers. This i
 │                 CLAUDE CODE POWER SETUP (this repo)                 │
 │                                                                     │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
-│  │  13 Hooks │  │ 22 Skills│  │12 Agents │  │  2 MCP Servers   │   │
+│  │  13 Hooks │  │ 33 Skills│  │12 Agents │  │  2 MCP Servers   │   │
 │  │          │  │          │  │          │  │                  │   │
 │  │ Auto-fmt │  │ /review  │  │ security │  │ context7 (docs)  │   │
 │  │ Auto-test│  │ /deploy  │  │ rag-debug│  │ seq-thinking     │   │
@@ -112,7 +112,7 @@ Done. Open any project with Claude Code — hooks are active, skills are availab
 | Project CLAUDE.md | `CLAUDE.md` | Project instructions for Claude — stack, commands, LLM rules |
 | Project settings | `.claude/settings.json` | Allow/deny rules + 7 hook event handlers |
 | MCP servers | `.mcp.json` | context7 (live docs) + sequential-thinking (structured reasoning) |
-| Slash commands | `.claude/skills/` | 22 custom `/commands` |
+| Slash commands | `.claude/skills/` | 33 custom `/commands` |
 | Subagents | `.claude/agents/` | 12 specialized AI subagents |
 | Context rules | `.claude/rules/` | Domain-specific rules loaded on demand |
 | Ignore list | `.claudeignore` | Tells Claude to skip logs, weights, caches |
@@ -268,6 +268,7 @@ This is what using the setup actually looks like day-to-day:
 │                                                             │
 │  > /search-first             # before writing new code      │
 │  > /brainstorm               # before architectural choices │
+│  > /tdd                      # test-first for new features  │
 ├─────────────────────────────────────────────────────────────┤
 │                    BEFORE COMMITTING                         │
 │                                                             │
@@ -279,15 +280,22 @@ This is what using the setup actually looks like day-to-day:
 ├─────────────────────────────────────────────────────────────┤
 │                    WHEN STUCK                                │
 │                                                             │
+│  > /diagnose                 # structured debugging loop     │
 │  > /debug-llm                # parse LLM call logs          │
 │  > /deep-research            # multi-round web research     │
-│  > /cost-aware-pipeline      # audit for token waste        │
+│  > /zoom-out                 # see the bigger picture        │
 ├─────────────────────────────────────────────────────────────┤
 │                    EXPERIMENTS                                │
 │                                                             │
 │  > /new-experiment           # isolated git worktree        │
 │  > /compare-experiments      # side-by-side results         │
 │  > /cleanup-experiments      # remove stale worktrees       │
+├─────────────────────────────────────────────────────────────┤
+│                    END OF SESSION                             │
+│                                                             │
+│  > /handoff                  # save context for next session │
+│  > /self-learn               # extract reusable knowledge   │
+│  > /caveman                  # save tokens when chatting     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -329,30 +337,32 @@ EOF
 
 It's now available as `/my-command` in any Claude Code session in that project.
 
-### The 22 included skills
+### The 33 included skills
 
 ```
 Skills by Category
 ==================
 
-DEVELOPMENT WORKFLOW          CODE REVIEW & QUALITY
-├── /new-project              ├── /review
-├── /brainstorm               ├── /full-review
-├── /brainstorm-panel         ├── /second-opinion
-├── /search-first             └── /deploy-check
+DEVELOPMENT WORKFLOW          CODE REVIEW & QUALITY       ARCHITECTURE & DESIGN
+├── /new-project              ├── /review                 ├── /design-agent
+├── /brainstorm               ├── /full-review            ├── /improve-architecture
+├── /brainstorm-panel         ├── /second-opinion         ├── /prototype
+├── /search-first             └── /deploy-check           └── /zoom-out
 └── /update-context
 
-LLM ENGINEERING               EXPERIMENTS
-├── /debug-llm                ├── /new-experiment
-├── /cost-aware-pipeline      ├── /compare-experiments
-└── /design-agent             ├── /cleanup-experiments
-                              ├── /freeze
-RESEARCH & PLANNING           └── /unfreeze
+LLM ENGINEERING               EXPERIMENTS                 PLANNING & ALIGNMENT
+├── /debug-llm                ├── /new-experiment         ├── /grill
+├── /cost-aware-pipeline      ├── /compare-experiments    ├── /grill-with-docs
+├── /tdd                      ├── /cleanup-experiments    ├── /to-prd
+└── /diagnose                 ├── /freeze                 ├── /to-issues
+                              └── /unfreeze               └── /handoff
+RESEARCH & PRODUCTIVITY
 ├── /deep-research
 ├── /inspiration
 ├── /self-learn
 ├── /autoloop
-└── /offload
+├── /offload
+└── /caveman
 ```
 
 #### Development Workflow
@@ -380,8 +390,6 @@ RESEARCH & PLANNING           └── /unfreeze
 |---------|------------------|
 | `/debug-llm` | LLM bugs are subtle — high latency, silent cost spikes, quality regressions. This parses `logs/llm/*.json` (every call is logged) and surfaces failures, slow calls, expensive calls, and quality patterns. |
 | `/cost-aware-pipeline` | LLM pipelines get expensive fast. This audits your chain architecture for unnecessary calls, wrong model choices, missing caching, and token waste. |
-| `/design-agent` | Building an agent without an explicit state graph leads to spaghetti orchestration. This designs the full architecture first: state graph, pattern choice, guardrails, Mermaid diagram. |
-
 #### Experiments
 
 | Command | Problem it solves |
@@ -392,7 +400,33 @@ RESEARCH & PLANNING           └── /unfreeze
 | `/freeze [path]` | When you only want Claude to touch one subdirectory (e.g. `src/services/`) this blocks any Write/Edit outside that path for the session. |
 | `/unfreeze` | Removes the freeze set by `/freeze`. |
 
-#### Research & Planning
+#### Architecture & Design
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/design-agent` | Building an agent without an explicit state graph leads to spaghetti orchestration. This designs the full architecture first: state graph, pattern choice, guardrails, Mermaid diagram. |
+| `/improve-architecture` | Codebases accumulate shallow modules (interface nearly as complex as the implementation). This finds deepening opportunities — refactors that consolidate shallow modules into deep ones with better testability. Uses parallel sub-agents to generate competing interface designs. |
+| `/prototype` | Committing to a design before testing it wastes days. This routes to the right prototype: terminal TUI for logic/state questions, or multiple radically different UI variants (switchable via URL param) for visual questions. Logic is isolated in a portable module; the shell is throwaway. |
+| `/zoom-out` | You're deep in unfamiliar code and lost. This one-shot command steps back and produces a module map showing all relevant modules and callers, using the project's domain vocabulary. |
+
+#### Planning & Alignment
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/grill` | Claude jumps to implementation too fast. This interviews you one question at a time about your plan, providing its own recommended answer for each question — so it's not interrogating in a vacuum. Explores the codebase instead of asking when it can. |
+| `/grill-with-docs` | Same as `/grill`, but also updates `CONTEXT.md` (domain glossary) and creates ADRs inline as decisions crystallize during the conversation. The documentation is a side effect, not a separate step. |
+| `/to-prd` | After alignment (via `/grill`), you need a spec. This synthesizes the conversation into a structured PRD with user stories, implementation decisions, and testing decisions — without re-interviewing you. |
+| `/to-issues` | A PRD sitting in a doc doesn't get built. This breaks it into vertical-slice issues (tracer bullets) that cut through ALL layers end-to-end. Each issue is classified as AFK (agent can do it alone) or HITL (needs human), published in dependency order. |
+| `/handoff` | Long sessions lose context when you switch terminals or come back tomorrow. This compacts the conversation into a handoff doc, referencing existing artifacts (PRDs, ADRs, commits) instead of duplicating them. |
+
+#### Testing & Debugging
+
+| Command | Problem it solves |
+|---------|------------------|
+| `/tdd` | "I'll add tests later" means tests never get written. This enforces red-green-refactor with vertical slices — one test, one implementation, repeat. Never mocks your own modules (only system boundaries). |
+| `/diagnose` | Shotgun debugging wastes hours. This follows a six-phase structured loop: build a feedback loop first (10 ordered strategies from cheapest to most expensive), generate 3-5 ranked falsifiable hypotheses before testing any, instrument one variable at a time with tagged debug logs, write regression test before the fix. Hands off architectural findings to `/improve-architecture`. |
+
+#### Research & Productivity
 
 | Command | Problem it solves |
 |---------|------------------|
@@ -401,6 +435,7 @@ RESEARCH & PLANNING           └── /unfreeze
 | `/self-learn` | Debugging breakthroughs and workarounds discovered in a session get lost. This extracts them into persistent memory so they're available in future sessions. |
 | `/autoloop [interval] [command]` | Polling a deploy or watching test results requires you to keep typing. This runs any command on a recurring interval (e.g. `/autoloop 5m /deploy-check`). |
 | `/offload` | Long background tasks (scraping, batch processing, analysis) block the conversation. This delegates to a subagent and lets you continue working while it runs. |
+| `/caveman` | Claude's responses are verbose — pleasantries, filler, hedging waste tokens. This activates ultra-compressed mode (~75% token reduction) that persists across the entire session. Automatically suspends for security warnings and irreversible actions, then resumes. |
 
 ---
 
@@ -992,7 +1027,7 @@ your-project/
 ├── .claude/
 │   ├── settings.json            # Allow/deny rules + hooks
 │   ├── agents/                  # 12 specialized subagents
-│   ├── skills/                  # 22 slash commands
+│   ├── skills/                  # 33 slash commands
 │   └── rules/                   # Domain-specific context rules
 ├── src/                         # FastAPI application code
 ├── tests/                       # pytest tests (mock all LLM calls)

@@ -19,9 +19,13 @@ Brainstorm approaches for a problem or feature. Searches for prior art, generate
 
 ## Process
 
-### Phase 1: Understand the Problem (2-3 questions)
+### Phase 1: Understand the Problem
 
-Ask the user to clarify (via plain text, not long questionnaires):
+Ask questions **one at a time**, waiting for feedback before continuing. For each question, **provide your recommended answer** based on what you can infer from the codebase and conversation — don't interrogate in a vacuum.
+
+If a question can be answered by exploring the codebase, explore the codebase instead of asking.
+
+Key questions to resolve (not all at once):
 - What are you trying to build/solve?
 - Any constraints? (timeline, tech stack, budget, existing code)
 - What have you already considered or tried?
