@@ -301,6 +301,250 @@ This is what using the setup actually looks like day-to-day:
 
 ---
 
+## Step-by-Step: How to Use Each Skill
+
+### Building a New Feature (full pipeline)
+
+This is the recommended flow for building anything non-trivial. Each step feeds the next.
+
+```
+Step 1: Align                    Step 2: Spec                Step 3: Break Down
+─────────────────               ──────────────              ─────────────────
+> /grill                        > /to-prd                   > /to-issues
+                                                            
+  Q: "What happens when         Synthesizes the grill       Breaks PRD into
+  a user retries a failed       session into a formal       vertical slices:
+  payment? My rec: queue        PRD with user stories,
+  it for retry with 1hr         impl decisions, test        Issue 1 (AFK): Schema
+  backoff."                     decisions.                  Issue 2 (AFK): API
+                                                            Issue 3 (HITL): UI
+  A: "Actually we want          Saves to:                   Issue 4 (AFK): Tests
+  instant retry with            docs/specs/retry-prd.md
+  idempotency key."                                         Each cuts through ALL
+                                No re-interviewing —        layers end-to-end.
+  (resolves one branch,         uses what you already
+  moves to next question)       discussed.
+```
+
+```
+Step 4: Build (per issue)       Step 5: Review              Step 6: Handoff
+─────────────────────           ──────────────              ────────────────
+> /tdd                          > /review                   > /handoff "payment retry"
+
+  RED:   test_retry_queued      LLM-specific code           Compacts the session
+  GREEN: implement retry        review catches:             for the next person
+  RED:   test_idempotency       - missing cost tracking     (or tomorrow-you):
+  GREEN: add idempotency        - unclosed async client
+                                - no token counting         "See docs/specs/
+  Hooks auto-format and                                     retry-prd.md. Issues
+  auto-test on each save.       > /full-review              1-3 done, issue 4
+                                (9 parallel specialist      blocked on test
+                                agents for thorough         fixtures."
+                                pre-merge review)
+```
+
+### Quick reference: which skill when
+
+```
+"I have a vague idea"                          → /brainstorm
+"I have a plan, poke holes in it"              → /grill
+"I have a plan, also update our docs"          → /grill-with-docs
+"Turn this discussion into a spec"             → /to-prd
+"Turn this spec into tickets"                  → /to-issues
+"Build this test-first"                        → /tdd
+"Should I use X or Y architecture?"            → /design-agent
+"Does this state machine actually work?"       → /prototype
+"Something is broken"                          → /diagnose
+"I'm lost in this code"                        → /zoom-out
+"Find what already exists before I build"      → /search-first
+"How do others solve this?"                    → /deep-research
+"Analyze this GitHub repo for ideas"           → /inspiration
+"Make Claude's responses shorter"              → /caveman
+"Refactor this spaghetti"                      → /improve-architecture
+"Save what I learned today"                    → /self-learn
+"Switching contexts, save my state"            → /handoff
+"Is this ready to deploy?"                     → /deploy-check
+"LLM calls are slow/expensive"                 → /debug-llm  or  /cost-aware-pipeline
+"Get a second model's opinion"                 → /second-opinion
+"Run 3 models on this brainstorm"              → /brainstorm-panel
+```
+
+### Example: Using `/grill` (the alignment skill)
+
+```
+You:     /grill I want to add caching to our RAG pipeline
+
+Claude:  Let me explore the codebase first...
+         
+         [reads src/rag/, checks current retrieval flow]
+         
+         Q1: "Where should the cache sit — before embedding (cache the query
+         → chunks mapping) or after embedding (cache the vector → results)?
+         
+         My recommendation: Cache before embedding. Your queries repeat often
+         (I see 40% duplicate queries in logs/rag/) and embedding is your
+         biggest latency cost at 200ms per call."
+
+You:     Before embedding, but we also need to invalidate when docs change.
+
+Claude:  Good point. Q2: "Invalidation strategy — TTL-based (simple, eventual
+         consistency) or event-driven (immediate, more complex)?
+         
+         My recommendation: Event-driven. You already have a document ingestion
+         pipeline in src/rag/ingest.py that could emit cache-bust events.
+         TTL would serve stale results for up to [TTL] after a doc update."
+
+You:     Event-driven, agreed.
+
+Claude:  Q3: "Cache backend — Redis (you already have it running per
+         docker-compose.yml) or in-memory LRU (simpler, lost on restart)?
+         
+         My recommendation: Redis. It's already in your stack, survives
+         restarts, and can be shared across worker processes."
+
+         ... [continues until all decisions resolved]
+```
+
+### Example: Using `/grill-with-docs` (grill + documentation)
+
+Same as above, but after resolving each term, Claude updates your project docs:
+
+```
+Claude:  I notice you said "cache" but your CONTEXT.md doesn't define what
+         a cache means in your RAG context. Let me add it:
+         
+         [writes to CONTEXT.md]
+         **Query Cache**: A Redis-backed mapping from normalized query strings
+         to retrieved chunk IDs, invalidated on document re-ingestion.
+         _Avoid_: result cache, embedding cache (those would be different things)
+
+Claude:  This caching decision is hard to reverse (Redis dependency), surprising
+         without context (why not just TTL?), and was a real trade-off.
+         Want me to record it as an ADR?
+
+You:     Yes.
+
+Claude:  [writes docs/adr/0003-event-driven-cache-invalidation.md]
+         "We chose event-driven invalidation over TTL for the query cache
+         because 40% of queries repeat and stale results after doc updates
+         would break user trust. Redis is already in the stack."
+```
+
+### Example: Using `/diagnose` (structured debugging)
+
+```
+You:     /diagnose The embedding service returns empty results for queries
+         longer than 200 characters
+
+Claude:  Phase 1 — Building a feedback loop.
+         
+         Trying strategy #1 (failing test):
+         
+         [writes test_embedding_long_query.py]
+         def test_long_query_returns_results():
+             query = "a" * 201 + " machine learning optimization"
+             results = embed_and_search(query)
+             assert len(results) > 0  # FAILS ✓ — reproduced
+         
+         Feedback loop established. Runs in 2 seconds.
+         
+         Phase 3 — Hypotheses (testing none yet):
+         
+         1. [HIGH] Token limit truncation — the embedding model silently
+            truncates at 512 tokens, and long queries push the meaningful
+            content past the cutoff
+         2. [MEDIUM] Query preprocessing strips content — check if
+            normalize_query() in src/rag/search.py truncates
+         3. [LOW] Vector DB similarity threshold — long query embeddings
+            might have lower cosine similarity due to dilution
+         
+         Which should I test first? (I'd start with #1 — cheapest to verify)
+
+You:     Go with 1.
+
+Claude:  [adds tagged debug log]
+         logger.debug("[DEBUG-e3f1] pre-embed token count: %d", count)
+         
+         Result: query has 847 tokens, model max is 512.
+         The meaningful search terms are at position 600-847 — past cutoff.
+         
+         Root cause confirmed. Writing regression test before fix...
+```
+
+### Example: Using `/caveman` (token savings)
+
+```
+You:     /caveman
+
+Claude:  Caveman active. All response compressed. Off with "stop caveman".
+
+You:     Explain our auth middleware
+
+Claude:  JWT middleware in src/api/middleware/auth.py.
+         Request -> extract Bearer token -> decode w/ RS256 -> validate exp
+         + iss -> attach user to request.state.
+         
+         Fails: 401 + JSON error body. No redirect.
+         
+         Skip list: /health, /docs, /openapi.json.
+
+You:     What if the token is expired?
+
+Claude:  **Warning:** This touches authentication — describing the full flow
+         clearly to avoid any security misunderstanding.
+         
+         When the JWT `exp` claim is in the past, the middleware returns a
+         `401 Unauthorized` response with body `{"detail": "Token expired"}`.
+         The client is expected to use its refresh token to obtain a new
+         access token. The refresh endpoint is `POST /auth/refresh`.
+         
+         Caveman resume. No auto-refresh server-side — client responsibility.
+```
+
+### Example: Using `/prototype` (answering design questions)
+
+```
+You:     /prototype Does our order state machine handle the case where
+         payment fails after items are already reserved?
+
+Claude:  This is a logic/state question → building a terminal prototype.
+         
+         Question: "Can OrderStateMachine handle payment_failed after
+         items_reserved without leaking reserved inventory?"
+         
+         [creates src/ordering/prototype_order_fsm.py]
+         - Pure state machine module (portable, no TUI code)
+         - States: draft, items_reserved, payment_pending, payment_failed,
+           confirmed, cancelled
+         
+         [creates prototype runner]
+         
+         Run with: uv run python src/ordering/prototype_order_fsm.py
+         
+         ┌─ Order State Machine ─────────────────────────────┐
+         │ State: items_reserved                              │
+         │ Items: [SKU-001 x2, SKU-042 x1]                  │
+         │ Reserved: True                                     │
+         │ Payment: not_attempted                             │
+         └───────────────────────────────────────────────────┘
+         [p] attempt payment  [f] fail payment  [c] cancel  [q] quit
+
+You:     [presses f]
+
+Claude:  ┌─ Order State Machine ─────────────────────────────┐
+         │ State: payment_failed                              │
+         │ Items: [SKU-001 x2, SKU-042 x1]                  │
+         │ Reserved: True  ← BUG: items still reserved!      │
+         │ Payment: failed                                    │
+         └───────────────────────────────────────────────────┘
+         
+         Found it — payment_failed doesn't release reservations.
+         The state machine needs a release_inventory transition
+         from payment_failed. Want me to fix the real code?
+```
+
+---
+
 ## Skills (Slash Commands)
 
 ### What skills are
